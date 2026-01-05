@@ -1,0 +1,9 @@
+<Application xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+		<VisualElements
+				BackgroundColor="#2D2D30"
+				ShowNameOnSquare150x150Logo="on"
+				Square150x150Logo="Logos\AIDE_Logo.ico"
+				Square70x70Logo="Logos\AIDE_Logo.ico"
+				ForegroundText="light"
+				ShortDisplayName="AIDE" />
+</Application>

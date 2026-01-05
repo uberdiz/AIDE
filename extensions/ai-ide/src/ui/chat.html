@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src https: data:; script-src 'unsafe-inline' https: ${webview.cspSource}; style-src 'unsafe-inline' https: ${webview.cspSource};">
+    <link rel="stylesheet" href="${hljsCssUri}">
+    <style>
+        body { font-family: var(--vscode-font-family); margin: 0; background: var(--vscode-editor-background); color: var(--vscode-foreground); display: flex; flex-direction: column; height: 100vh; font-size: 13px; }
+        #header { padding: 12px; border-bottom: 1px solid var(--vscode-panel-border); display: flex; flex-direction: column; background: var(--vscode-sideBar-background); gap: 10px; }
+        .controls { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 10px; }
+        .select-wrapper { display: flex; align-items: center; gap: 4px; position: relative; }
+        .select-label { font-size: 10px; opacity: 0.7; font-weight: bold; text-transform: uppercase; }
+        select { background: var(--vscode-dropdown-background); color: var(--vscode-dropdown-foreground); border: 1px solid var(--vscode-dropdown-border); padding: 4px 8px; border-radius: 2px; font-size: 11px; cursor: pointer; }
+        select:hover { border-color: var(--vscode-focusBorder); }
+        #messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 16px; }
+        .message { max-width: 90%; padding: 12px; border-radius: 8px; line-height: 1.6; word-wrap: break-word; position: relative; }
+
+        /* Agent Working Indicator */
+        #working-indicator {
+            display: none;
+            align-self: flex-start;
+            background: var(--vscode-editor-inactiveSelectionBackground);
+            color: var(--vscode-editor-foreground);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            margin-bottom: 10px;
+            border: 1px solid var(--vscode-panel-border);
+            animation: fadeIn 0.3s ease-in;
+        }
+        .spinner {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border: 2px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: var(--vscode-foreground);
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .message.user { align-self: flex-end; background: var(--vscode-button-background); color: var(--vscode-button-foreground); }
+        .message.assistant { align-self: flex-start; background: var(--vscode-editor-inactiveSelectionBackground); color: var(--vscode-editor-foreground); border: 1px solid var(--vscode-panel-border); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .message.error { align-self: center; background: var(--vscode-inputValidation-errorBackground); color: var(--vscode-inputValidation-errorForeground); border: 1px solid var(--vscode-inputValidation-errorBorder); width: 100%; }
+
+        /* Scrollbar Styling */
+        #messages::-webkit-scrollbar { width: 8px; }
+        #messages::-webkit-scrollbar-track { background: transparent; }
+        #messages::-webkit-scrollbar-thumb { background: var(--vscode-scrollbarSlider-background); border-radius: 4px; }
+        #messages::-webkit-scrollbar-thumb:hover { background: var(--vscode-scrollbarSlider-hoverBackground); }
+
+        /* Markdown Styling */
+        .message table { border-collapse: collapse; margin: 10px 0; width: 100%; font-size: 12px; }
+        .message th, .message td { border: 1px solid var(--vscode-panel-border); padding: 6px 10px; text-align: left; }
+        .message th { background: var(--vscode-sideBar-background); }
+        .message pre { background: var(--vscode-textCodeBlock-background); padding: 12px; border-radius: 6px; overflow-x: auto; margin: 12px 0; border: 1px solid var(--vscode-panel-border); position: relative; }
+        .message code { font-family: var(--vscode-editor-font-family); background: rgba(128,128,128,0.15); padding: 2px 5px; border-radius: 3px; font-size: 0.9em; }
+        .message pre code { background: transparent; padding: 0; font-size: 1em; }
+        .message p { margin: 10px 0; }
+        .message ul, .message ol { padding-left: 24px; margin: 10px 0; }
+        .message li { margin-bottom: 4px; }
+
+        .copy-btn { position: absolute; top: 5px; right: 5px; opacity: 0; transition: opacity 0.2s; background: var(--vscode-button-secondaryBackground); color: var(--vscode-button-secondaryForeground); border: none; padding: 2px 6px; border-radius: 3px; font-size: 10px; cursor: pointer; }
+        .message pre:hover .copy-btn { opacity: 1; }
+
+        /* Welcome Screen */
+        #welcome-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            text-align: center;
+            min-height: 300px;
+        }
+        #welcome-logo {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 16px;
+        }
+        #welcome-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin: 0;
+            color: var(--vscode-foreground);
+        }
+        #welcome-subtitle {
+            font-size: 13px;
+            opacity: 0.7;
+            margin-top: 8px;
+        }
+
+        #send-btn {
+            background: var(--vscode-button-background);
+            color: var(--vscode-button-foreground);
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 0;
+            flex-shrink: 0;
+        }
+        #send-btn:hover { background: var(--vscode-button-hoverBackground); transform: scale(1.05); }
+        #send-btn:active { transform: scale(0.95); }
+        #send-btn svg { width: 18px; height: 18px; fill: currentColor; transition: transform 0.3s ease; }
+        #send-btn.working { background: var(--vscode-errorForeground); }
+        #send-btn.working svg { transform: rotate(90deg); }
+
+        #input-container { padding: 12px; background: var(--vscode-sideBar-background); border-top: 1px solid var(--vscode-panel-border); }
+        #input-container .toolbar { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+        textarea {
+            width: 100%;
+            background: var(--vscode-input-background);
+            color: var(--vscode-input-foreground);
+            border: 1px solid var(--vscode-input-border);
+            padding: 8px 12px;
+            border-radius: 4px;
+            resize: none;
+            height: 60px;
+            font-family: inherit;
+            font-size: 13px;
+            transition: border-color 0.2s;
+        }
+        textarea:focus { border-color: var(--vscode-focusBorder); outline: none; }
+        button { background: var(--vscode-button-background); color: var(--vscode-button-foreground); border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 500; }
+        button:hover { background: var(--vscode-button-hoverBackground); }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .secondary-btn { background: transparent; border: 1px solid var(--vscode-button-background); color: var(--vscode-foreground); }
+
+        #team-info { display: flex; gap: 12px; overflow-x: auto; font-size: 11px; opacity: 0.8; padding: 4px 0; }
+        .agent-pill { display: flex; align-items: center; gap: 4px; background: var(--vscode-badge-background); color: var(--vscode-badge-foreground); padding: 2px 8px; border-radius: 10px; white-space: nowrap; }
+
+        #image-preview { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+        .preview-item { position: relative; width: 60px; height: 60px; border: 1px solid var(--vscode-panel-border); border-radius: 4px; }
+        .preview-item img { width: 100%; height: 100%; object-fit: cover; border-radius: 4px; }
+        .remove-img { position: absolute; top: -5px; right: -5px; background: var(--vscode-errorForeground); color: white; border-radius: 50%; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 12px; font-weight: bold; }
+        .undo-btn { align-self: flex-end; margin-top: 4px; font-size: 10px; padding: 2px 8px; opacity: 0.7; background: transparent; color: var(--vscode-foreground); border: 1px solid var(--vscode-panel-border); border-radius: 4px; display: block; width: fit-content; }
+		.undo-btn:hover { opacity: 1; background: var(--vscode-editor-inactiveSelectionBackground); }
+        .cmd-block { background: var(--vscode-terminal-background); color: var(--vscode-terminal-foreground); padding: 8px; border-radius: 4px; border: 1px solid var(--vscode-panel-border); margin: 8px 0; }
+        .cmd-btn { background: var(--vscode-button-secondaryBackground); color: var(--vscode-button-secondaryForeground); border: none; padding: 4px 8px; border-radius: 2px; cursor: pointer; font-size: 11px; margin-top: 4px; }
+
+        .diff-separator { background: var(--vscode-panel-border); height: 1px; margin: 4px 0; }
+
+        /* Diff Styling */
+        .diff-container {
+            border: 1px solid var(--vscode-panel-border);
+            border-radius: 6px;
+            overflow: hidden;
+            margin: 10px 0;
+            font-family: var(--vscode-editor-font-family);
+            background: var(--vscode-editor-background);
+        }
+        .diff-header {
+            background: var(--vscode-sideBar-background);
+            padding: 4px 12px;
+            border-bottom: 1px solid var(--vscode-panel-border);
+            font-size: 11px;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+        }
+        .diff-body {
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        .diff-line {
+            display: flex;
+            white-space: pre;
+            min-height: 1.5em;
+        }
+        .diff-line-num {
+            width: 35px;
+            padding: 0 8px;
+            text-align: right;
+            color: var(--vscode-editorLineNumber-foreground);
+            user-select: none;
+            border-right: 1px solid var(--vscode-panel-border);
+            background: var(--vscode-editor-background);
+            flex-shrink: 0;
+            opacity: 0.5;
+        }
+        .diff-prefix {
+            width: 20px;
+            text-align: center;
+            flex-shrink: 0;
+            user-select: none;
+        }
+        .diff-code {
+            flex: 1;
+            padding-left: 4px;
+        }
+        .diff-added {
+            background: rgba(74, 158, 74, 0.15);
+        }
+        .diff-added .diff-prefix {
+            color: #4ade80;
+        }
+        .diff-removed {
+            background: rgba(158, 74, 74, 0.15);
+        }
+        .diff-removed .diff-prefix {
+            color: #f87171;
+        }
+        .diff-context {
+            opacity: 0.7;
+        }
+
+/* Action Buttons Above Chatbox */
+#action-toolbar {
+    display: none;
+    padding: 8px 15px;
+    background: var(--vscode-sideBar-background);
+    border-top: 1px solid var(--vscode-panel-border);
+    border-bottom: 1px solid var(--vscode-panel-border);
+    gap: 8px;
+    justify-content: flex-end;
+}
+#action-toolbar button { font-size: 11px; padding: 4px 10px; }
+#reject-btn { background: var(--vscode-errorForeground); color: white; }
+
+        /* Collapsible File Bar */
+        .file-container {
+            margin: 12px 0;
+            border: 1px solid var(--vscode-panel-border);
+            border-radius: 6px;
+            overflow: hidden;
+            background: var(--vscode-sideBar-background);
+        }
+        .file-bar {
+            display: flex;
+            align-items: center;
+            background: var(--vscode-editor-inactiveSelectionBackground);
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            gap: 10px;
+            user-select: none;
+            border-bottom: 1px solid transparent;
+        }
+        .file-bar:hover { background: var(--vscode-editor-selectionBackground); }
+        .file-container.expanded .file-bar { border-bottom-color: var(--vscode-panel-border); }
+
+        .file-expand-icon {
+            font-size: 10px;
+            transition: transform 0.2s ease;
+            display: inline-block;
+            width: 10px;
+        }
+        .file-container.expanded .file-expand-icon { transform: rotate(90deg); }
+
+        .file-content {
+            display: none;
+            background: var(--vscode-editor-background);
+        }
+        .file-container.expanded .file-content { display: block; }
+
+        .file-meta {
+            padding: 4px 12px;
+            background: var(--vscode-sideBar-background);
+            border-bottom: 1px solid var(--vscode-panel-border);
+            font-size: 10px;
+            opacity: 0.7;
+            display: flex;
+            justify-content: space-between;
+        }
+        .file-actions {
+            padding: 8px;
+            display: flex;
+            gap: 8px;
+            border-top: 1px solid var(--vscode-panel-border);
+            background: var(--vscode-sideBar-background);
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* AI Response Buttons */
+        .response-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+            opacity: 1; /* Always visible */
+        }
+        .action-icon-btn {
+    background: transparent;
+    border: 1px solid var(--vscode-panel-border);
+    color: var(--vscode-foreground);
+    padding: 2px 6px;
+    font-size: 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+        .action-icon-btn:hover { background: var(--vscode-editor-inactiveSelectionBackground); }
+
+#mic-btn { background: transparent; color: var(--vscode-foreground); border: 1px solid var(--vscode-panel-border); font-size: 14px; padding: 4px 8px; border-radius: 4px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+#mic-btn.recording { border-color: var(--vscode-errorForeground); color: var(--vscode-errorForeground); animation: pulse 1.5s infinite; }
+@keyframes pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.1); } 100% { opacity: 1; transform: scale(1); } }
+#mic-btn.hidden { display: none; }
+</style>
+	</head>
+	<body>
+	<div id="header">
+		<div class="controls">
+			<div style="display:flex; gap:12px;">
+				<div class="select-wrapper">
+					<span class="select-label">Mode</span>
+					<select id="mode-select">
+						<option value="plan">Plan & Code</option>
+						<option value="quick">Direct Apply</option>
+					</select>
+				</div>
+				<div class="select-wrapper">
+					<span class="select-label">Group</span>
+					<select id="group-select"></select>
+				</div>
+			</div>
+			<div style="display:flex; gap:8px;">
+				<button class="secondary-btn" id="clear-btn" title="Reset Chat">Reset</button>
+			</div>
+		</div>
+		<div id="team-info"></div>
+	</div>
+
+	<div id="messages">
+		<div id="welcome-container">
+			<img id="welcome-logo" src="${logoUri}" alt="AIDE Logo">
+			<h1 id="welcome-title">Welcome to AIDE</h1>
+			<p id="welcome-subtitle">Your intelligent pair programmer is ready to help.</p>
+		</div>
+	</div>
+	<div id="working-indicator"><div class="spinner"></div><span id="working-text">Agent Working...</span></div>
+
+	<div id="action-toolbar">
+		<button id="start-coding-btn" style="display:none; background:var(--vscode-statusBar-background); color:var(--vscode-statusBar-foreground)">▶ Start Coding</button>
+		<button id="reject-btn">Revert Changes</button>
+		<button id="apply-btn" disabled>Apply Changes</button>
+	</div>
+
+	<div id="input-container">
+		<div id="image-preview"></div>
+		<textarea id="input" autofocus placeholder="Type a message or use @ for files..."></textarea>
+		<div class="toolbar">
+			<button id="attach-btn" title="Attach context" class="secondary-btn">📎 Add Context</button>
+			<button id="mic-btn" title="Speech to Text" class="secondary-btn">🎤</button>
+			<button id="optimize-btn" title="Optimize query for Planner" class="secondary-btn">✨ Optimize</button>
+			<div style="flex:1"></div>
+			<button id="send-btn">
+				<svg viewBox="0 0 24 24">
+					<path d="M12 4l-8 8h5v8h6v-8h5z" />
+				</svg>
+			</button>
+		</div>
+	</div>
+
+	<script src="${markedUri}"></script>
+	<script src="${hljsUri}"></script>
+
+	<script>
+	(function () {
+		window.log = function (msg) {
+			console.log(msg);
+		};
+
+		window.onerror = function (message, source, lineno, colno, error) {
+			console.error('CRITICAL: ' + message + ' (' + source + ':' + lineno + ')');
+		};
+	})();
+	</script>
+
+	<script>
+	(function () {
+		window.log('Main script starting...');
+
+		try {
+			const vscode = acquireVsCodeApi();
+			window.log('AIDE API acquired');
+
+			class ChatApp {
+				constructor() {
+					window.log('ChatApp invoking constructor');
+					this.state = {
+						groups: [],
+						activeGroup: '',
+						messages: [],
+						mode: 'plan',
+						attachedImages: [],
+						pendingPatches: []
+					};
+
+					this.elements = {
+						messages: document.getElementById('messages'),
+						input: document.getElementById('input'),
+						imgPreview: document.getElementById('image-preview'),
+						modeSelect: document.getElementById('mode-select'),
+						groupSelect: document.getElementById('group-select'),
+						actionToolbar: document.getElementById('action-toolbar'),
+						rejectBtn: document.getElementById('reject-btn'),
+						applyBtn: document.getElementById('apply-btn'),
+						sendBtn: document.getElementById('send-btn'),
+						attachBtn: document.getElementById('attach-btn'),
+						clearBtn: document.getElementById('clear-btn'),
+						startCodingBtn: document.getElementById('start-coding-btn'),
+						teamInfo: document.getElementById('team-info'),
+						micBtn: document.getElementById('mic-btn'),
+						optimizeBtn: document.getElementById('optimize-btn'),
+						workingIndicator: document.getElementById('working-indicator'),
+						workingText: document.getElementById('working-text'),
+						welcomeContainer: document.getElementById('welcome-container')
+					};
+
+					this.setupMarkdown();
+					this.bindEvents();
+
+					window.copyCode = (el) => {
+						if (el.tagName === 'BUTTON' && el.classList.contains('copy-btn')) {
+							const code = el.nextElementSibling.innerText;
+							navigator.clipboard.writeText(code);
+							el.innerText = 'Copied!';
+							setTimeout(() => el.innerText = 'Copy', 2000);
+						} else {
+							const text = el.innerText;
+							navigator.clipboard.writeText(text);
+							vscode.postMessage({ type: 'showInfo', text: 'Copied to clipboard' });
+						}
+					};
+
+					window.runVscodeCommand = (cmd) => this.runCommand(cmd);
+					window.executeAndAnalyze = (cmd) => this.executeAndAnalyze(cmd);
+				window.removeImage = (idx) => this.removeImage(idx);
+				window.toggleFile = (el) => {
+					const container = el.closest('.file-container');
+					if (container) {
+						container.classList.toggle('expanded');
+					}
+				};
+
+					window.log('ChatApp: Initialized successfully');
+					vscode.postMessage({ type: 'ready' });
+				}
+
+				setupMarkdown() {
+					if (typeof marked === 'undefined') {
+						window.log('WARN: Marked library NOT FOUND. Fallback enabled.');
+						window.marked = {
+							parse: (text) => '<p>' + text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt').replace(/\\n/g, '<br>') + '</p>',
+							setOptions: () => { }
+						};
+					} else {
+						window.log('INFO: Marked library loaded successfully');
+
+						// Configure marked with highlight.js
+						const renderer = new marked.Renderer();
+						marked.setOptions({
+							renderer: renderer,
+							highlight: function (code, lang) {
+								if (typeof hljs !== 'undefined' && lang && hljs.getLanguage(lang)) {
+									try {
+										return hljs.highlight(code, { language: lang }).value;
+									} catch (__) { }
+								}
+								return code; // use external default escaping
+							},
+							gfm: true,
+							breaks: true,
+							pedantic: false,
+							smartLists: true,
+							smartypants: false
+						});
+					}
+				}
+
+				bindEvents() {
+					window.log('Binding events...');
+					this.elements.input.addEventListener('keydown', (e) => {
+						if (e.key === 'Enter' && !e.shiftKey) {
+							e.preventDefault();
+							this.sendMessage(true); // forceSend = true for keyboard
+						}
+					});
+
+					this.elements.input.oninput = () => this.saveUnsentPrompt();
+
+					if (this.elements.optimizeBtn) {
+						this.elements.optimizeBtn.onclick = () => {
+							const text = this.elements.input.value.trim();
+							if (text) {
+								vscode.postMessage({ type: 'optimizeQuery', text });
+							}
+						};
+					}
+
+					if (this.elements.sendBtn) this.elements.sendBtn.onclick = () => this.sendMessage(false); // forceSend = false for button click (acts as toggle)
+					if (this.elements.attachBtn) this.elements.attachBtn.onclick = () => vscode.postMessage({ type: 'attachContext' });
+					if (this.elements.clearBtn) this.elements.clearBtn.onclick = () => vscode.postMessage({ type: 'clearHistory' });
+
+					if (this.elements.applyBtn) {
+						this.elements.applyBtn.onclick = () => {
+							vscode.postMessage({ type: 'applyChanges' });
+							if (this.elements.applyBtn) this.elements.applyBtn.disabled = true;
+							if (this.elements.rejectBtn) this.elements.rejectBtn.disabled = true;
+						};
+					}
+
+					if (this.elements.rejectBtn) {
+						this.elements.rejectBtn.onclick = () => {
+							vscode.postMessage({ type: 'rejectChanges' });
+							if (this.elements.applyBtn) this.elements.applyBtn.disabled = true;
+							if (this.elements.rejectBtn) this.elements.rejectBtn.disabled = true;
+						};
+					}
+
+					if (this.elements.startCodingBtn) {
+						this.elements.startCodingBtn.onclick = () => {
+							this.elements.startCodingBtn.style.display = 'none';
+							vscode.postMessage({ type: 'startCoding' });
+						};
+					}
+
+					if (this.elements.modeSelect) {
+						this.elements.modeSelect.onchange = (e) => vscode.postMessage({ type: 'changeMode', mode: e.target.value });
+					}
+
+					if (this.elements.groupSelect) {
+						this.elements.groupSelect.onchange = (e) => {
+							const group = e.target.value;
+							window.log('Group changed to: ' + group);
+							if (group) {
+								vscode.postMessage({ type: 'changeGroup', group });
+							}
+						};
+					}
+
+					if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+						this.initSpeech();
+						if (this.elements.micBtn) {
+							this.elements.micBtn.onclick = () => this.toggleSpeech();
+						}
+					} else {
+						if (this.elements.micBtn) {
+							this.elements.micBtn.innerHTML = '🎤🚫';
+							this.elements.micBtn.title = 'Speech not supported';
+							this.elements.micBtn.disabled = true;
+							this.elements.micBtn.classList.add('hidden');
+						}
+					}
+
+					window.addEventListener('message', (e) => this.handleMessage(e.data));
+				}
+
+				handleMessage(msg) {
+					window.log('Received backend msg: ' + msg.type);
+					try {
+						switch (msg.type) {
+							case 'addMessage':
+								this.renderMessage(msg.message);
+								break;
+							case 'updateMessage':
+								this.updateMessage(msg.index, msg.content);
+								break;
+							case 'syncState':
+								this.syncState(msg.state);
+								break;
+							case 'appendInput':
+								this.elements.input.value += msg.text;
+								this.elements.input.focus();
+								this.saveUnsentPrompt();
+								break;
+							case 'addImage':
+								this.state.attachedImages.push(msg.data);
+								this.renderPreviews();
+								break;
+							case 'setWorking':
+								this.setWorking(msg.working, msg.text);
+								break;
+							case 'enableApplyButton':
+								if (msg.patches) {
+									this.state.pendingPatches = msg.patches;
+									// Re-render messages to show better diffs if needed
+									this.reRenderLastMessage();
+								}
+								if (this.elements.applyBtn) this.elements.applyBtn.disabled = false;
+								if (this.elements.actionToolbar) this.elements.actionToolbar.style.display = 'flex';
+								break;
+							case 'disableApplyButton':
+								if (this.elements.applyBtn) this.elements.applyBtn.disabled = true;
+								if (this.elements.actionToolbar && !this.elements.startCodingBtn.style.display.includes('inline')) {
+									this.elements.actionToolbar.style.display = 'none';
+								}
+								break;
+							case 'showProceedButton':
+								if (this.elements.startCodingBtn) this.elements.startCodingBtn.style.display = 'inline-block';
+								if (this.elements.actionToolbar) this.elements.actionToolbar.style.display = 'flex';
+								break;
+							case 'hideProceedButton':
+								if (this.elements.startCodingBtn) this.elements.startCodingBtn.style.display = 'none';
+								break;
+							case 'restoreInput':
+								if (this.elements.input) {
+									this.elements.input.value = msg.text || '';
+									this.elements.input.focus();
+								}
+								this.state.attachedImages = msg.images || [];
+								this.renderPreviews();
+								break;
+						}
+					} catch (err) {
+						window.log('Error handling message: ' + err.message);
+					}
+				}
+
+				processContent(content) {
+					let processedContent = content || '';
+
+					// PRE-PROCESS: Inject newlines before code blocks to fix rendering
+					processedContent = processedContent.replace(/([^\n])\x60\x60\x60/g, '$1\n\x60\x60\x60');
+
+					const cmdRegex = new RegExp('\\[COMMAND:\\s*([\\s\\S]*?)\\]', 'gi');
+					const commands = [];
+					processedContent = processedContent.replace(cmdRegex, (match, cmd) => {
+						commands.push(cmd.trim());
+						return '___CMD_PLACEHOLDER___';
+					});
+
+					// 1. First, parse markdown
+					let html = marked.parse(processedContent);
+
+					// 2. Then, replace [FILE: path] + code block with collapsible container or inline diff
+					const fileRegex = /(?:<p>)?\[FILE:\s*([a-zA-Z0-9_\-\.\/]+)\](?:<\/p>)?\s*<pre><code(?: class="language-([^"]*)")?>([\s\S]*?)<\/code><\/pre>/gi;
+					html = html.replace(fileRegex, (match, path, lang, code) => {
+						const patch = (this.state.pendingPatches || []).find(p => p.path.endsWith(path));
+						const unescapedCode = code
+							.replace(/&lt;/g, '<')
+							.replace(/&gt;/g, '>')
+							.replace(/&amp;/g, '&')
+							.replace(/&quot;/g, '"')
+							.replace(/&#39;/g, "'");
+
+						// Check if this is a SEARCH/REPLACE block
+						if (unescapedCode.includes('<<<<<<< SEARCH') && unescapedCode.includes('=======') && unescapedCode.includes('>>>>>>> REPLACE')) {
+							return this.renderInlineDiff(path, unescapedCode, patch);
+						}
+
+						return this.renderFileBar(path, unescapedCode, patch);
+					});
+
+					// 3. Add copy buttons to other code blocks (that are not file bars or diffs)
+					html = html.replace(/<pre><code/g, '<pre><button class="copy-btn" onclick="window.copyCode(this)">Copy</button><code');
+
+					// 4. Handle commands
+					commands.forEach(cmd => {
+						const safeDisplayCmd = cmd.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '');
+						const safeHandlerCmd = cmd.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '');
+						const cmdHtml = '<div class="cmd-block"><div style="font-family:monospace; opacity:0.8; margin-bottom:4px; white-space:pre-wrap;">$ ' + safeDisplayCmd + '</div><div style="display:flex; gap:8px;"><button class="cmd-btn" onclick="window.runVscodeCommand(\'' + safeHandlerCmd + '\')">Run in Terminal</button><button class="cmd-btn" style="background:var(--vscode-button-background); color:var(--vscode-button-foreground);" onclick="window.executeAndAnalyze(\'' + safeHandlerCmd + '\')">Run & Analyze</button></div></div>';
+						html = html.replace('___CMD_PLACEHOLDER___', cmdHtml);
+					});
+
+					return html;
+				}
+
+				renderInlineDiff(path, patchCode, enrichedPatch) {
+					const searchReplaceRegex = /<<<<<<<\s*SEARCH\s*(?:\r?\n)?([\s\S]*?)(?:\r?\n)?=======\s*(?:\r?\n)?([\s\S]*?)(?:\r?\n)?>>>>>>>\s*REPLACE/g;
+					const patchMatch = searchReplaceRegex.exec(patchCode);
+
+					if (!patchMatch) {
+						return `<div class="file-bar">
+							<div class="file-info">${path}</div>
+							<pre><code>${this.escapeHtml(patchCode)}</code></pre>
+						</div>`;
+					}
+
+					const searchContent = patchMatch[1];
+					const replaceContent = patchMatch[2];
+					const searchLines = searchContent.split(/\r?\n/);
+					const replaceLines = replaceContent.split(/\r?\n/);
+
+					let html = `<div class="diff-container">
+						<div class="diff-header">
+							<span>${path}</span>
+							<span style="opacity:0.6; font-size:10px;">INLINE DIFF</span>
+						</div>
+						<div class="diff-body">`;
+
+					let lineNum = 1;
+
+					// If we have enriched patch data, try to find context
+					if (enrichedPatch && enrichedPatch.oldContent) {
+						const oldLines = enrichedPatch.oldContent.split(/\r?\n/);
+						const normalizedSearchLines = searchLines.map(l => l.trim());
+
+						let startIndex = -1;
+						for (let i = 0; i <= oldLines.length - searchLines.length; i++) {
+							let match = true;
+							for (let j = 0; j < searchLines.length; j++) {
+								if (oldLines[i + j].trim() !== normalizedSearchLines[j]) {
+									match = false;
+									break;
+								}
+							}
+							if (match) {
+								startIndex = i;
+								break;
+							}
+						}
+
+						if (startIndex !== -1) {
+							// Add pre-context
+							const contextSize = 3;
+							for (let i = Math.max(0, startIndex - contextSize); i < startIndex; i++) {
+								html += `<div class="diff-line diff-context">
+									<div class="diff-line-num">${i + 1}</div>
+									<div class="diff-prefix"> </div>
+									<div class="diff-code">${this.escapeHtml(oldLines[i])}</div>
+								</div>`;
+							}
+							lineNum = startIndex + 1;
+						}
+					}
+
+					// Render SEARCH (removed) lines
+					searchLines.forEach((line, i) => {
+						html += `<div class="diff-line diff-removed">
+							<div class="diff-line-num">${lineNum + i}</div>
+							<div class="diff-prefix">-</div>
+							<div class="diff-code">${this.escapeHtml(line)}</div>
+						</div>`;
+					});
+
+					html += `<div class="diff-separator"></div>`;
+
+					// Render REPLACE (added) lines
+					replaceLines.forEach((line, i) => {
+						html += `<div class="diff-line diff-added">
+							<div class="diff-line-num">${lineNum + i}</div>
+							<div class="diff-prefix">+</div>
+							<div class="diff-code">${this.escapeHtml(line)}</div>
+						</div>`;
+					});
+
+					html += `</div></div>`;
+					return html;
+				}
+
+				escapeHtml(text) {
+					if (!text) return '';
+					return text
+						.replace(/&/g, '&amp;')
+						.replace(/</g, '&lt;')
+						.replace(/>/g, '&gt;')
+						.replace(/"/g, '&quot;')
+						.replace(/'/g, '&#039;');
+				}
+
+				reRenderLastMessage() {
+					if (this.state.messages.length === 0) return;
+					const lastMsg = this.state.messages[this.state.messages.length - 1];
+					if (lastMsg.role !== 'assistant') return;
+
+					// Find the last message element
+					const msgElements = this.elements.messages.querySelectorAll('.message.assistant');
+					if (msgElements.length > 0) {
+						const lastElem = msgElements[msgElements.length - 1];
+						// Re-render its content
+						const contentDiv = lastElem.querySelector('.content');
+						if (contentDiv) {
+							// Temporarily clear messages to avoid duplicate tracking in renderMessage
+							const tempMessages = [...this.state.messages];
+							this.state.messages = this.state.messages.filter(m => m !== lastMsg);
+
+							contentDiv.innerHTML = this.processContent(lastMsg.content || '');
+
+							// Restore messages
+							this.state.messages = tempMessages;
+						}
+					}
+				}
+
+				sendMessage(forceSend = false) {
+					const isWorking = this.elements.sendBtn.classList.contains('working');
+					if (isWorking && !forceSend) {
+						vscode.postMessage({ type: 'stop' });
+						return;
+					}
+
+					const text = this.elements.input.value.trim();
+					if (!text && this.state.attachedImages.length === 0) return;
+
+					window.log('Sending message: ' + text.substring(0, 20) + '...');
+					vscode.postMessage({ type: 'sendMessage', text, images: this.state.attachedImages });
+					this.elements.input.value = '';
+					this.state.attachedImages = [];
+					this.renderPreviews();
+				}
+
+				renderPreviews() {
+					this.elements.imgPreview.innerHTML = '';
+					this.state.attachedImages.forEach((src, idx) => {
+						const div = document.createElement('div');
+						div.className = 'preview-item';
+						div.innerHTML = '<img src="' + src + '"><div class="remove-img" onclick="window.removeImage(' + idx + ')">×</div>';
+						this.elements.imgPreview.appendChild(div);
+					});
+				}
+
+				removeImage(idx) {
+					this.state.attachedImages.splice(idx, 1);
+					this.renderPreviews();
+				}
+
+				runCommand(cmd) {
+					vscode.postMessage({ type: 'runCommand', command: cmd });
+				}
+
+				executeAndAnalyze(cmd) {
+					vscode.postMessage({ type: 'executeAndAnalyze', command: cmd });
+				}
+
+				syncState(newState) {
+					window.log('Syncing state. Groups: ' + (newState.groups ? newState.groups.length : 0));
+
+					// Restore unsent prompt if any
+					if (newState.unsentPrompt && !this.elements.input.value) {
+						this.elements.input.value = newState.unsentPrompt;
+					}
+
+					// Groups
+					const serverGroups = newState.groups || [];
+					const currentOptions = Array.from(this.elements.groupSelect.options).map(o => o.value);
+
+					const needsUpdate = serverGroups.length !== currentOptions.length || !serverGroups.every((g, i) => g === currentOptions[i]);
+
+					if (needsUpdate || this.elements.groupSelect.innerHTML === '') {
+						this.elements.groupSelect.innerHTML = serverGroups.length > 0
+							? serverGroups.map(g => '<option value="' + g.replace(/"/g, '&quot;') + '">' + g + '</option>').join('')
+							: '<option value="">No Groups</option>';
+					}
+
+					if (newState.activeGroup) {
+						this.elements.groupSelect.value = newState.activeGroup;
+						this.state.activeGroup = newState.activeGroup;
+					} else if (serverGroups.length > 0 && !this.elements.groupSelect.value) {
+						window.log('Forcing first group selection');
+						this.elements.groupSelect.value = serverGroups[0];
+						vscode.postMessage({ type: 'changeGroup', group: serverGroups[0] });
+					}
+
+					// Agents
+					if (newState.agents) {
+						this.elements.teamInfo.innerHTML = newState.agents.map(a =>
+							'<div class="agent-pill" title="' + a.provider + '">' +
+							'<span>' + a.role + '</span>' +
+							'<span style="opacity:0.6">(' + a.model + ')</span>' +
+							'</div>'
+						).join('');
+					}
+
+					// Mode
+					if (newState.mode) {
+						this.elements.modeSelect.value = newState.mode;
+					}
+
+					// Messages
+					const currentMsgs = Array.from(this.elements.messages.querySelectorAll('.message'));
+					const hasMessages = newState.messages && newState.messages.length > 0;
+					const needsFullRender = !newState.messages ||
+											newState.messages.length !== currentMsgs.length;
+
+					if (needsFullRender) {
+						this.elements.messages.innerHTML = '';
+						if (!hasMessages) {
+							this.elements.messages.appendChild(this.elements.welcomeContainer);
+							this.elements.welcomeContainer.style.display = 'flex';
+						} else {
+							this.elements.welcomeContainer.style.display = 'none';
+						}
+						this.state.messages = []; // Reset local message tracking
+						(newState.messages || []).forEach(m => this.renderMessage(m));
+					}
+
+					// Toolbar visibility logic
+					if (this.elements.actionToolbar) {
+						const hasPending = !!newState.hasPendingChanges;
+						const startCodingVisible = this.elements.startCodingBtn && this.elements.startCodingBtn.style.display !== 'none';
+
+						if (newState.pendingPatches) {
+							this.state.pendingPatches = newState.pendingPatches;
+						}
+
+						if (hasPending || startCodingVisible) {
+							this.elements.actionToolbar.style.display = 'flex';
+						} else {
+							this.elements.actionToolbar.style.display = 'none';
+						}
+
+						if (this.elements.applyBtn) {
+							this.elements.applyBtn.disabled = !hasPending;
+						}
+						if (this.elements.rejectBtn) {
+							this.elements.rejectBtn.disabled = !hasPending;
+						}
+					}
+				}
+
+				updateMessage(index, content) {
+					if (this.state.messages[index]) {
+						this.state.messages[index].content = content;
+						const msgElements = this.elements.messages.querySelectorAll('.message');
+						if (msgElements[index]) {
+							const contentDiv = msgElements[index].querySelector('.content');
+							if (contentDiv) {
+								contentDiv.innerHTML = this.processContent(content);
+							}
+						}
+					}
+				}
+
+				renderMessage(m) {
+					if (this.elements.welcomeContainer) {
+						this.elements.welcomeContainer.style.display = 'none';
+					}
+					// Update local state tracking if this is a new message being rendered individually
+					if (!this.state.messages.includes(m)) {
+						this.state.messages.push(m);
+					}
+
+					const div = document.createElement('div');
+					div.className = 'message ' + m.role;
+
+					if (m.images && m.images.length > 0) {
+						const imgContainer = document.createElement('div');
+						imgContainer.style.cssText = 'display:flex; gap:8px; margin-bottom:8px; flex-wrap:wrap;';
+						m.images.forEach(src => {
+							const img = document.createElement('img');
+							img.src = src;
+							img.style.cssText = 'max-width:200px; border-radius:4px;';
+							imgContainer.appendChild(img);
+						});
+						div.appendChild(imgContainer);
+					}
+
+					const textDiv = document.createElement('div');
+					textDiv.className = 'content';
+					textDiv.innerHTML = this.processContent(m.content || '');
+					div.appendChild(textDiv);
+
+					if (m.role === 'assistant') {
+						const actions = document.createElement('div');
+						actions.className = 'response-actions';
+						actions.innerHTML = `
+							<button class="action-icon-btn" onclick="vscode.postMessage({type:'feedback', role:'assistant', value:'up'})" title="Thumbs Up">👍</button>
+							<button class="action-icon-btn" onclick="vscode.postMessage({type:'feedback', role:'assistant', value:'down'})" title="Thumbs Down">👎</button>
+							<button class="action-icon-btn" onclick="window.copyCode(this.parentElement.parentElement.querySelector('.content'))" title="Copy Response">📋 Copy</button>
+							<button class="action-icon-btn" onclick="vscode.postMessage({type:'regenerate'})" title="Regenerate Response">🔄 Regenerate</button>
+						`;
+						div.appendChild(actions);
+					}
+
+					this.elements.messages.appendChild(div);
+
+					if (m.role === 'user') {
+						const undoBtn = document.createElement('button');
+						undoBtn.className = 'undo-btn';
+						undoBtn.innerHTML = '↶ Revert Interaction';
+						const msgIdx = this.state.messages.indexOf(m);
+						undoBtn.onclick = () => vscode.postMessage({ type: 'undo', index: msgIdx });
+						div.appendChild(undoBtn); // Append to the message div instead of messages container
+					}
+
+					this.elements.messages.scrollTop = this.elements.messages.scrollHeight;
+				}
+
+				renderFileBar(path, code, patch) {
+					const ext = path.split('.').pop() || 'txt';
+					const status = patch ? (patch.isNew ? 'added' : 'modified') : 'view';
+					const statusClass = status;
+
+					const meta = patch ? `Size: ${patch.size || '?'} bytes | Modified: ${new Date().toLocaleTimeString()}` : 'Existing File';
+
+					const isDiff = /<<<<<<<\s*SEARCH/.test(code);
+					const diffHtml = isDiff
+						? this.renderInlineDiff(path, code, patch)
+						: `<pre><code class="language-${ext}">${this.escapeHtml(code)}</code></pre>`;
+
+					return `
+						<div class="file-container">
+							<div class="file-bar" onclick="window.toggleFile(this)">
+								<span class="file-expand-icon">▶</span>
+								<span class="file-name">${path}</span>
+								<span class="file-status ${statusClass}">${status}</span>
+							</div>
+							<div class="file-content">
+								<div class="file-meta">
+									<span>${meta}</span>
+								</div>
+								<div style="padding: 0 8px;">
+									${diffHtml}
+								</div>
+								<div class="file-actions">
+									<button class="action-icon-btn" onclick="vscode.postMessage({type:'openFile', path:'${path}'})">📂 Open</button>
+									<button class="action-icon-btn" onclick="vscode.postMessage({type:'runFile', path:'${path}'})">▶ Run</button>
+									<button class="action-icon-btn" onclick="vscode.postMessage({type:'deleteFile', path:'${path}'})">🗑 Delete</button>
+									${patch ? `<button class="action-icon-btn" style="background:var(--vscode-button-background); color:var(--vscode-button-foreground);" onclick="vscode.postMessage({type:'applySinglePatch', path:'${path}'})">✅ Apply</button>` : ''}
+								</div>
+							</div>
+						</div>
+					`;
+				}
+
+				renderInlineDiff(path, patchCode, enrichedPatch) {
+					const lines = patchCode.split('\n');
+					let html = `<div class="diff-container">
+						<div class="diff-header">
+							<span>${path}</span>
+							<span style="opacity:0.6; font-size:10px;">INLINE DIFF</span>
+						</div>
+						<div class="diff-body">`;
+
+					let inSearch = false;
+					let inReplace = false;
+					let lineNum = 1;
+					let searchContent = '';
+
+					// Extract search content for context finding
+					const searchMatch = patchCode.match(/<<<<<<<\s*SEARCH\s*\n([\s\S]*?)\n\s*=======/);
+					if (searchMatch) searchContent = searchMatch[1];
+
+					// If we have enriched patch data, try to find context
+					if (enrichedPatch && enrichedPatch.oldContent && searchContent) {
+						const oldLines = enrichedPatch.oldContent.split('\n');
+						const searchLines = searchContent.split('\n');
+
+						let startIndex = -1;
+						for (let i = 0; i <= oldLines.length - searchLines.length; i++) {
+							let match = true;
+							for (let j = 0; j < searchLines.length; j++) {
+								if (oldLines[i + j].trim() !== searchLines[j].trim()) {
+									match = false;
+									break;
+								}
+							}
+							if (match) {
+								startIndex = i;
+								break;
+							}
+						}
+
+						if (startIndex !== -1) {
+							// Add pre-context
+							for (let i = Math.max(0, startIndex - 3); i < startIndex; i++) {
+								html += `<div class="diff-line">
+									<div class="diff-line-num">${i + 1}</div>
+									<div class="diff-prefix"> </div>
+									<div class="diff-code">${this.escapeHtml(oldLines[i])}</div>
+								</div>`;
+							}
+							lineNum = startIndex + 1;
+						}
+					}
+
+					lines.forEach(line => {
+						const trimmed = line.trim();
+						if (trimmed.startsWith('<<<<<<< SEARCH')) {
+							inSearch = true;
+							return;
+						}
+						if (trimmed.startsWith('=======') && inSearch) {
+							inSearch = false;
+							inReplace = true;
+							return;
+						}
+						if (trimmed.startsWith('>>>>>>> REPLACE') && inReplace) {
+							inReplace = false;
+							return;
+						}
+
+						let className = 'diff-line';
+						let prefix = ' ';
+						if (inSearch) { className += ' diff-removed'; prefix = '-'; }
+						if (inReplace) { className += ' diff-added'; prefix = '+'; }
+
+						if (inSearch || inReplace) {
+							html += `<div class="${className}">
+								<div class="diff-line-num">${lineNum++}</div>
+								<div class="diff-prefix">${prefix}</div>
+								<div class="diff-code">${this.escapeHtml(line)}</div>
+							</div>`;
+						}
+					});
+
+					// Add post-context if we found the start index
+					if (enrichedPatch && enrichedPatch.oldContent && searchContent) {
+						const oldLines = enrichedPatch.oldContent.split('\n');
+						const searchLines = searchContent.split('\n');
+
+						let startIndex = -1;
+						for (let i = 0; i <= oldLines.length - searchLines.length; i++) {
+							let match = true;
+							for (let j = 0; j < searchLines.length; j++) {
+								if (oldLines[i + j].trim() !== searchLines[j].trim()) {
+									match = false;
+									break;
+								}
+							}
+							if (match) {
+								startIndex = i;
+								break;
+							}
+						}
+
+						if (startIndex !== -1) {
+							const endIndex = startIndex + searchLines.length;
+							for (let i = endIndex; i < Math.min(oldLines.length, endIndex + 3); i++) {
+								html += `<div class="diff-line">
+									<div class="diff-line-num">${i + 1}</div>
+									<div class="diff-prefix"> </div>
+									<div class="diff-code">${this.escapeHtml(oldLines[i])}</div>
+								</div>`;
+							}
+						}
+					}
+
+					html += `</div></div>`;
+					return html;
+				}
+
+				escapeHtml(text) {
+					const div = document.createElement('div');
+					div.textContent = text;
+					return div.innerHTML;
+				}
+
+				initSpeech() {
+					const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+					if (!SpeechRecognition) return;
+
+					this.recognition = new SpeechRecognition();
+					this.recognition.continuous = true;
+					this.recognition.interimResults = true;
+
+					this.recognition.onstart = () => this.elements.micBtn.classList.add('recording');
+					this.recognition.onend = () => this.elements.micBtn.classList.remove('recording');
+					this.recognition.onerror = () => this.elements.micBtn.classList.remove('recording');
+
+					this.recognition.onresult = (event) => {
+						let finalTranscript = '';
+						for (let i = event.resultIndex; i < event.results.length; ++i) {
+							if (event.results[i].isFinal) {
+								finalTranscript += event.results[i][0].transcript;
+							}
+						}
+						if (finalTranscript) {
+							this.elements.input.value += (this.elements.input.value ? ' ' : '') + finalTranscript;
+							this.elements.input.focus();
+						}
+					};
+				}
+
+				toggleSpeech() {
+					if (this.elements.micBtn.classList.contains('recording')) {
+						this.recognition.stop();
+					} else {
+						this.recognition.start();
+					}
+				}
+
+				saveUnsentPrompt() {
+					const text = this.elements.input.value;
+					vscode.postMessage({ type: 'saveUnsentPrompt', text });
+				}
+
+				setWorking(working, text) {
+					if (working) {
+						this.elements.workingIndicator.style.display = 'flex';
+						this.elements.workingText.innerText = text || 'Agent Working...';
+						this.elements.sendBtn.classList.add('working');
+						this.elements.sendBtn.innerHTML = `
+							<svg viewBox="0 0 24 24">
+								<rect x="6" y="6" width="12" height="12" />
+							</svg>
+						`;
+					} else {
+						this.elements.workingIndicator.style.display = 'none';
+						this.elements.sendBtn.classList.remove('working');
+						this.elements.sendBtn.innerHTML = `
+							<svg viewBox="0 0 24 24">
+								<path d="M12 4l-8 8h5v8h6v-8h5z" />
+							</svg>
+						`;
+					}
+				}
+			}
+
+			new ChatApp();
+
+		} catch (e) {
+			window.log('CRITICAL INIT ERROR: ' + e.message);
+		}
+
+	})();
+</script>
+	</body>
+	</html>

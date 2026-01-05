@@ -1,0 +1,323 @@
+{
+    "name": "ai-ide",
+    "displayName": "AI IDE - Intelligent Development Assistant",
+    "description": "AI-powered development assistant with multi-agent system, planning, coding, and testing capabilities",
+    "version": "1.0.0",
+    "publisher": "ai-ide",
+    "engines": {
+        "vscode": "^1.85.0"
+    },
+    "categories": [
+        "Other",
+        "Programming Languages",
+        "Machine Learning"
+    ],
+    "keywords": [
+        "ai",
+        "assistant",
+        "agents",
+        "planning",
+        "automation"
+    ],
+    "activationEvents": [
+        "*"
+    ],
+    "main": "./out/extension.js",
+    "contributes": {
+        "commands": [
+            {
+                "command": "ai-ide.openChat",
+                "title": "AI IDE: Open Chat",
+                "icon": "$(comment-discussion)"
+            },
+            {
+                "command": "ai-ide.createPlan",
+                "title": "AI IDE: Create Plan",
+                "icon": "$(checklist)"
+            },
+            {
+                "command": "ai-ide.applyChanges",
+                "title": "AI IDE: Apply Changes",
+                "icon": "$(check)"
+            },
+            {
+                "command": "ai-ide.showNextSteps",
+                "title": "AI IDE: Show Next Steps",
+                "icon": "$(arrow-right)"
+            },
+            {
+                "command": "ai-ide.manageAgentGroups",
+                "title": "AI IDE: Manage Agent Groups",
+                "icon": "$(organization)"
+            },
+            {
+                "command": "ai-ide.switchAgentGroup",
+                "title": "AI IDE: Switch Agent Group",
+                "icon": "$(arrow-swap)"
+            },
+            {
+                "command": "ai-ide.addSelectionToChat",
+                "title": "💬 Add to AI Chat"
+            },
+            {
+                "command": "ai-ide.rollbackChat",
+                "title": "AI IDE: Rollback Chat",
+                "icon": "$(history)"
+            },
+            {
+                "command": "ai-ide.toggleExecutionMode",
+                "title": "AI IDE: Toggle Plan/Quick Mode",
+                "icon": "$(zap)"
+            },
+            {
+                "command": "ai-ide.showFileTimeline",
+                "title": "AI IDE: Show File Timeline",
+                "icon": "$(timeline-view-icon)"
+            },
+            {
+                "command": "ai-ide.addTask",
+                "title": "Add AI Task",
+                "icon": "$(add)"
+            },
+            {
+                "command": "ai-ide.clearTasks",
+                "title": "Clear All Tasks",
+                "icon": "$(trash)"
+            },
+            {
+                "command": "ai-ide.editTask",
+                "title": "Edit Task/Comment",
+                "icon": "$(edit)"
+            },
+            {
+                "command": "ai-ide.removeTask",
+                "title": "Remove Task",
+                "icon": "$(close)"
+            }
+        ],
+        "viewsContainers": {
+            "activitybar": [
+                {
+                    "id": "ai-chat-container",
+                    "title": "AI Chat",
+                    "icon": "resources/AIDE_Logo.png"
+                },
+                {
+                    "id": "ai-ide",
+                    "title": "AI IDE",
+                    "icon": "resources/AIDE_Logo.png"
+                }
+            ]
+        },
+        "views": {
+            "ai-chat-container": [
+                {
+                    "id": "ai-chat",
+                    "name": "Chat",
+                    "type": "webview",
+                    "icon": "$(comment-discussion)"
+                }
+            ],
+            "ai-ide": [
+                {
+                    "id": "ai-agents",
+                    "name": "Agents",
+                    "icon": "$(outline-view-icon)"
+                },
+                {
+                    "id": "ai-agent-manager-gui",
+                    "name": "Agent Group Manager",
+                    "type": "webview",
+                    "icon": "$(organization)"
+                },
+                {
+                    "id": "ai-settings-gui",
+                    "name": "IDE Settings",
+                    "type": "webview",
+                    "icon": "$(settings-gear)"
+                },
+                {
+                    "id": "ai-file-timeline",
+                    "name": "File Timeline",
+                    "icon": "$(history)"
+                }
+            ],
+            "explorer": [
+                {
+                    "id": "ai-tasks",
+                    "name": "AI Tasks",
+                    "icon": "$(checklist)"
+                }
+            ]
+        },
+        "configuration": {
+            "title": "AI IDE",
+            "properties": {
+                "ai-ide.agentGroups": {
+                    "type": "array",
+                    "default": [],
+                    "description": "Custom agent group configurations",
+                    "items": {
+                        "type": "object"
+                    }
+                },
+                "ai-ide.defaultProvider": {
+                    "type": "string",
+                    "default": "openai",
+                    "enum": [
+                        "openai",
+                        "ollama",
+                        "huggingface",
+                        "anthropic",
+                        "custom"
+                    ],
+                    "description": "Default AI provider"
+                },
+                "ai-ide.autoApprove": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Auto-approve agent actions without confirmation"
+                },
+                "ai-ide.executionMode": {
+                    "type": "string",
+                    "default": "plan",
+                    "enum": [
+                        "plan",
+                        "quick"
+                    ],
+                    "description": "Execution mode: plan (review before execution) or quick (immediate execution)"
+                },
+                "ai-ide.enableSelectionPrompts": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Show 'Add to Chat' prompt when selecting text"
+                },
+                "ai-ide.maxContextFiles": {
+                    "type": "number",
+                    "default": 10,
+                    "description": "Maximum number of files to include in context"
+                },
+                "ai-ide.chatPanelWidth": {
+                    "type": "number",
+                    "default": 400,
+                    "description": "Default width for the chat panel"
+                },
+                "ai-ide.enableDependencyAnalysis": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Analyze project dependencies for better context"
+                },
+                "ai-ide.autoExecute": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Automatically execute suggested run commands without prompting"
+                },
+                "ai-ide.defaultRunCommand": {
+                    "type": "string",
+                    "default": "npm start",
+                    "description": "Default command to suggest or run after changes"
+                },
+                "ai-ide.errorStrictness": {
+                    "type": "string",
+                    "default": "medium",
+                    "enum": [
+                        "low",
+                        "medium",
+                        "high"
+                    ],
+                    "description": "Strictness of automated error handling and fixes"
+                },
+                "ai-ide.enableNotifications": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Enable desktop notifications for agent completion and errors"
+                }
+            }
+        },
+        "keybindings": [
+            {
+                "command": "ai-ide.openChat",
+                "key": "ctrl+l",
+                "mac": "cmd+l"
+            },
+            {
+                "command": "ai-ide.addSelectionToChat",
+                "key": "ctrl+shift+l",
+                "mac": "cmd+shift+l",
+                "when": "editorHasSelection"
+            }
+        ],
+        "menus": {
+            "editor/context": [
+                {
+                    "command": "ai-ide.addSelectionToChat",
+                    "when": "editorHasSelection",
+                    "group": "ai@1"
+                }
+            ],
+            "explorer/context": [
+                {
+                    "command": "ai-ide.addSelectionToChat",
+                    "group": "ai@1"
+                }
+            ],
+            "terminal/context": [
+                {
+                    "command": "ai-ide.addSelectionToChat",
+                    "when": "terminalHasSelection",
+                    "group": "ai@1"
+                }
+            ],
+            "view/title": [
+                {
+                    "command": "ai-ide.manageAgentGroups",
+                    "when": "view == ai-agents",
+                    "group": "navigation"
+                },
+                {
+                    "command": "ai-ide.addTask",
+                    "when": "view == ai-tasks",
+                    "group": "navigation"
+                },
+                {
+                    "command": "ai-ide.clearTasks",
+                    "when": "view == ai-tasks",
+                    "group": "navigation"
+                }
+            ],
+            "view/item/context": [
+                {
+                    "command": "ai-ide.editTask",
+                    "when": "view == ai-tasks && viewItem == task-node",
+                    "group": "inline"
+                },
+                {
+                    "command": "ai-ide.removeTask",
+                    "when": "view == ai-tasks && viewItem == task-node",
+                    "group": "inline"
+                }
+            ]
+        }
+    },
+    "scripts": {
+        "vscode:prepublish": "npm run compile",
+        "compile": "tsc -p ./",
+        "watch": "tsc -watch -p ./",
+        "pretest": "npm run compile",
+        "test": "node ./out/test/runTest.js",
+        "lint": "eslint src"
+    },
+    "devDependencies": {
+        "@types/vscode": "^1.85.0",
+        "@types/node": "^20.x",
+        "typescript": "^5.3.0",
+        "@typescript-eslint/eslint-plugin": "^6.0.0",
+        "@typescript-eslint/parser": "^6.0.0",
+        "eslint": "^8.0.0"
+    },
+    "dependencies": {
+        "axios": "^1.6.0",
+        "marked": "^11.0.0",
+        "highlight.js": "^11.9.0"
+    }
+}

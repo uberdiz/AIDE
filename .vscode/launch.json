@@ -1,0 +1,29 @@
+{
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"name": "Run AI IDE Extension",
+			"type": "extensionHost",
+			"request": "launch",
+			"args": [
+				"--extensionDevelopmentPath=${workspaceFolder}/extensions/ai-ide"
+			],
+			"outFiles": [
+				"${workspaceFolder}/extensions/ai-ide/out/**/*.js"
+			],
+			"preLaunchTask": "${defaultBuildTask}"
+		},
+		{
+			"name": "Extension Tests",
+			"type": "extensionHost",
+			"request": "launch",
+			"args": [
+				"--extensionDevelopmentPath=${workspaceFolder}/extensions/ai-ide",
+				"--extensionTestsPath=${workspaceFolder}/extensions/ai-ide/out/test/suite/index"
+			],
+			"outFiles": [
+				"${workspaceFolder}/extensions/ai-ide/out/test/**/*.js"
+			]
+		}
+	]
+}
