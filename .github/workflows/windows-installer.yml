@@ -1,0 +1,36 @@
+name: Build Windows x64 Installer
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      
+name: Checkout repository
+      uses: actions/checkout@v4
+
+      
+name: Use Node 22.21.1
+      uses: actions/setup-node@v4
+      with:
+        node-version: 22.21.1
+        cache: npm
+
+      
+name: Install dependencies
+      run: npm install
+
+      
+name: Build Windows installer (User Setup)
+      run: npm run gulp vscode-win32-x64-user-setup
+
+      
+name: Upload installer artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows-installer
+        path: |/UserSetupx64*.exe
+          /*.exe
