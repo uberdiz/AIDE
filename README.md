@@ -1,3 +1,21 @@
+# AIDE - an AI-assisted IDE built on VS Code
+
+**AIDE** is a prototype desktop IDE I'm building on top of the open-source VS Code codebase (Code - OSS, MIT licensed).
+It adds a multi-agent workflow: a **Planner** turns a request into a reviewable plan, a **Coder** applies the edits,
+and tasks are checked off in the editor as they finish. Agents can run on local models through
+[Ollama](https://ollama.com) or on hosted providers.
+
+- **Stack:** TypeScript, Electron, VS Code (Code - OSS) extension APIs
+- **Status:** evolving prototype
+- **Quick start:** see [START_HERE.md](START_HERE.md) (`run-ai-ide.bat` on Windows, `run-ai-ide.sh` on Mac/Linux)
+- **Related:** [SAINT](https://github.com/uberdiz/SAINT), my local voice assistant, and my portfolio at
+  https://sebastianai.vercel.app
+
+> **Attribution:** this repository is a fork of [microsoft/vscode](https://github.com/microsoft/vscode). The upstream
+> README follows below, unchanged. AIDE is not affiliated with or endorsed by Microsoft.
+
+---
+
 # Visual Studio Code - Open Source ("Code - OSS")
 [![Feature Requests](https://img.shields.io/github/issues/microsoft/vscode/feature-request.svg)](https://github.com/microsoft/vscode/issues?q=is%3Aopen+is%3Aissue+label%3Afeature-request+sort%3Areactions-%2B1-desc)
 [![Bugs](https://img.shields.io/github/issues/microsoft/vscode/bug.svg)](https://github.com/microsoft/vscode/issues?utf8=✓&q=is%3Aissue+is%3Aopen+label%3Abug)
