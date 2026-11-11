@@ -1,0 +1,8 @@
+{
+  "name": "broken-ext",
+  "publisher": "aide-test",
+  "version": "0.0.1",
+  "engines": { "vscode": "^1.90.0" },
+  "main": "./extension.js",
+  "activationEvents": ["onCommand:aideTest.neverRegistered"]
+}

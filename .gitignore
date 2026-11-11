@@ -1,0 +1,9 @@
+node_modules/
+runtime/
+dist/
+.dev/
+.cache/
+extensions/aide-core/dist/
+extensions/aide-core/dist-test/
+*.vsix
+.vscode-test/

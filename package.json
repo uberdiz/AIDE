@@ -1,0 +1,37 @@
+{
+  "name": "aide",
+  "version": "2.0.0",
+  "private": true,
+  "description": "AIDE 2.0 - AI-native IDE built on the VSCodium workbench",
+  "scripts": {
+    "setup": "node scripts/setup-runtime.mjs",
+    "build": "node scripts/build.mjs",
+    "watch": "node scripts/build.mjs --watch",
+    "typecheck": "tsc -p extensions/aide-core --noEmit",
+    "dev": "node scripts/build.mjs && node scripts/run.mjs --dev",
+    "start": "node scripts/run.mjs",
+    "test": "vitest run",
+    "test:integration": "node scripts/build.mjs && node scripts/test-integration.mjs",
+    "package": "node scripts/build.mjs --production && node scripts/package.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.129.0",
+    "@modelcontextprotocol/sdk": "^1.31.0",
+    "diff": "^9.0.0",
+    "marked": "^18.0.14",
+    "yaml": "^2.9.1",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.4",
+    "@types/vscode": "^1.100.0",
+    "@vscode/codicons": "^0.0.46-24",
+    "@vscode/test-electron": "^3.1.0",
+    "esbuild": "^0.28.2",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.2"
+  }
+}

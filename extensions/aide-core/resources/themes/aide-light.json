@@ -1,0 +1,27 @@
+{
+  "$schema": "vscode://schemas/color-theme",
+  "name": "AIDE Light",
+  "include": "./base/light_modern.json",
+  "colors": {
+    "activityBar.activeBorder": "#C62828",
+    "activityBarBadge.background": "#C62828",
+    "button.background": "#C62828",
+    "button.hoverBackground": "#A82121",
+    "focusBorder": "#C6282899",
+    "progressBar.background": "#C62828",
+    "tab.activeBorderTop": "#C62828",
+    "panelTitle.activeBorder": "#C62828",
+    "statusBarItem.remoteBackground": "#C62828",
+    "terminal.tab.activeBorder": "#C62828",
+    "inputOption.activeBorder": "#C62828",
+    "textLink.foreground": "#B3261E",
+    "textLink.activeForeground": "#8C1D18",
+    "menu.selectionBackground": "#C62828",
+    "list.focusAndSelectionOutline": "#C62828",
+    "editorCursor.foreground": "#C62828",
+    "extensionButton.prominentBackground": "#C62828",
+    "extensionButton.prominentHoverBackground": "#A82121",
+    "chat.slashCommandBackground": "#C6282822",
+    "chat.slashCommandForeground": "#A82121"
+  }
+}

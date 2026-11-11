@@ -1,0 +1,331 @@
+/* AIDE webviews: follow the active VS Code theme through --vscode-* variables. */
+:root {
+	--gap: 8px;
+	--radius: 4px;
+	--border: var(--vscode-panel-border, var(--vscode-widget-border, rgba(128, 128, 128, 0.35)));
+	--muted: var(--vscode-descriptionForeground);
+	--bg-soft: var(--vscode-editorWidget-background, rgba(128, 128, 128, 0.08));
+	--accent: var(--vscode-focusBorder);
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; padding: 0; }
+body {
+	color: var(--vscode-foreground);
+	background: var(--vscode-sideBar-background, var(--vscode-editor-background));
+	font-family: var(--vscode-font-family);
+	font-size: var(--vscode-font-size);
+	line-height: 1.45;
+}
+body.aide-settings, body.aide-usage, body.aide-inspector, body.aide-regex { background: var(--vscode-editor-background); }
+a { color: var(--vscode-textLink-foreground); text-decoration: none; cursor: pointer; }
+a:hover { text-decoration: underline; color: var(--vscode-textLink-activeForeground); }
+code, pre { font-family: var(--vscode-editor-font-family); font-size: var(--vscode-editor-font-size, 12px); }
+:focus-visible { outline: 1px solid var(--accent); outline-offset: 1px; }
+.hidden { display: none !important; }
+.muted { color: var(--muted); }
+.spacer { flex: 1; }
+.pad { padding: var(--gap); }
+.warn { color: var(--vscode-editorWarning-foreground); }
+.err { color: var(--vscode-errorForeground); }
+.ok { color: var(--vscode-testing-iconPassed, #3fb950); }
+@media (prefers-reduced-motion: reduce) { .codicon-modifier-spin { animation: none !important; } }
+
+/* buttons & inputs */
+.btn {
+	display: inline-flex; align-items: center; gap: 4px;
+	padding: 3px 9px; border-radius: var(--radius);
+	border: 1px solid var(--vscode-button-border, transparent);
+	background: var(--vscode-button-secondaryBackground); color: var(--vscode-button-secondaryForeground);
+	font: inherit; cursor: pointer; white-space: nowrap;
+}
+.btn:hover { background: var(--vscode-button-secondaryHoverBackground); }
+.btn.primary { background: var(--vscode-button-background); color: var(--vscode-button-foreground); }
+.btn.primary:hover { background: var(--vscode-button-hoverBackground); }
+.btn.danger { color: var(--vscode-errorForeground); }
+.btn.small { padding: 1px 7px; font-size: 0.92em; }
+.btn:disabled { opacity: 0.5; cursor: default; }
+.icon-btn { background: transparent; border-color: transparent; padding: 3px 4px; color: var(--vscode-icon-foreground, var(--vscode-foreground)); }
+.icon-btn:hover { background: var(--vscode-toolbar-hoverBackground); }
+.icon-btn.tiny { padding: 0 2px; }
+.icon-btn.tiny .codicon { font-size: 12px; }
+select, input[type=text], input[type=search], input[type=number], input[type=password], textarea {
+	background: var(--vscode-input-background); color: var(--vscode-input-foreground);
+	border: 1px solid var(--vscode-input-border, var(--border)); border-radius: 2px;
+	font: inherit; padding: 3px 6px;
+}
+select { background: var(--vscode-dropdown-background); color: var(--vscode-dropdown-foreground); border-color: var(--vscode-dropdown-border, var(--border)); }
+textarea { resize: vertical; width: 100%; font-family: var(--vscode-font-family); }
+input:focus, textarea:focus, select:focus { outline: 1px solid var(--accent); outline-offset: -1px; }
+
+/* ------------------------------------------------------------------ chat (Antigravity / VS Code style) */
+body.aide-chat {
+	--surface: color-mix(in srgb, var(--vscode-foreground) 5%, var(--vscode-sideBar-background, var(--vscode-editor-background)));
+	--surface-2: color-mix(in srgb, var(--vscode-foreground) 9%, var(--vscode-sideBar-background, var(--vscode-editor-background)));
+	--line: color-mix(in srgb, var(--vscode-foreground) 13%, transparent);
+	--line-strong: color-mix(in srgb, var(--vscode-foreground) 22%, transparent);
+	--accent-soft: color-mix(in srgb, var(--vscode-button-background) 18%, transparent);
+	--r: 10px;
+	overflow: hidden;
+}
+body.aide-chat #app { display: flex; flex-direction: column; height: 100vh; position: relative; }
+.aide-chat .btn { border-radius: 6px; padding: 3px 10px; }
+.aide-chat .btn.small { padding: 2px 8px; font-size: 0.92em; }
+.aide-chat .btn.ghost { background: transparent; color: var(--vscode-textLink-foreground); }
+.aide-chat .btn.ghost:hover { background: var(--vscode-toolbar-hoverBackground); }
+.aide-chat .icon-btn { border-radius: 5px; padding: 3px; color: var(--muted); }
+.aide-chat .icon-btn:hover, .aide-chat .icon-btn.active { color: var(--vscode-foreground); background: var(--vscode-toolbar-hoverBackground); }
+.small { font-size: 0.9em; }
+
+/* header */
+.bar { display: flex; align-items: center; gap: 2px; height: 35px; padding: 0 6px 0 12px; flex: none; }
+.bar .title { font-weight: 600; font-size: 0.95em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* history dropdown */
+.history { position: absolute; top: 35px; left: 8px; right: 8px; z-index: 20; max-height: 60vh; display: flex; flex-direction: column; gap: 6px; padding: 8px;
+	background: var(--vscode-quickInput-background, var(--vscode-editorWidget-background)); border: 1px solid var(--line); border-radius: var(--r); box-shadow: 0 8px 24px var(--vscode-widget-shadow, rgba(0,0,0,.4)); }
+.history input { width: 100%; border-radius: 6px; padding: 5px 8px; }
+.history-list { overflow: auto; }
+.hist-row { position: relative; display: flex; gap: 8px; align-items: flex-start; padding: 6px 30px 6px 8px; border-radius: 6px; cursor: pointer; }
+.hist-row > .codicon { margin-top: 2px; color: var(--muted); }
+.hist-row:hover, .hist-row.active { background: var(--vscode-list-hoverBackground); }
+.hist-main { min-width: 0; flex: 1; }
+.hist-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hist-meta { font-size: 0.85em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hist-row .del { position: absolute; right: 4px; top: 6px; visibility: hidden; }
+.hist-row:hover .del { visibility: visible; }
+
+/* stage: messages + composer; empty state centers the composer like Antigravity */
+.stage { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.messages { flex: 1; overflow-y: auto; padding: 4px 14px 12px; scroll-behavior: auto; }
+.hero { display: none; }
+.is-empty .messages { display: none; }
+.is-empty .stage { justify-content: center; padding-bottom: 8vh; }
+.is-empty .hero { display: block; padding: 0 16px 10px; }
+.hero-title { display: flex; align-items: center; gap: 8px; font-size: 1.25em; font-weight: 600; margin-bottom: 2px; }
+.hero-logo { width: 22px; height: 22px; object-fit: contain; }
+.hero .warn, .hero p { margin: 6px 0; }
+.ideas { display: none; }
+.is-empty .ideas { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; margin-top: 10px; order: 3; }
+.idea { background: none; border: none; color: var(--muted); font: inherit; padding: 2px 0; cursor: pointer; text-align: left; }
+.idea:hover { color: var(--vscode-foreground); }
+.idea::before { content: '→ '; opacity: 0.6; }
+.branch-note { font-size: 0.88em; margin: 6px 0 2px; }
+
+/* messages */
+.msg { position: relative; margin: 14px 0; }
+.msg.user { display: flex; flex-direction: column; align-items: stretch; }
+.msg.user .bubble { background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r); padding: 8px 11px; white-space: pre-wrap; word-break: break-word; }
+.user-text { white-space: pre-wrap; }
+.mention-pill { display: inline-flex; align-items: center; gap: 2px; padding: 0 5px; border-radius: 4px; background: var(--accent-soft); font-size: 0.92em; vertical-align: baseline; }
+.mention-pill .codicon { font-size: 12px; }
+.mention-pill.clickable { cursor: pointer; }
+.mention-pill.slash { color: var(--vscode-textLink-foreground); }
+.att-row { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.msg-actions { position: absolute; top: -12px; right: 6px; display: none; gap: 1px; padding: 1px; border-radius: 6px; background: var(--vscode-editorWidget-background); border: 1px solid var(--line); box-shadow: 0 2px 8px var(--vscode-widget-shadow, rgba(0,0,0,.3)); z-index: 2; }
+.msg.user:hover > .msg-actions { display: flex; }
+.msg-actions.inline { position: static; display: flex; background: none; border: none; box-shadow: none; opacity: 0; transition: opacity .12s; }
+.msg.assistant:hover .msg-actions.inline, .msg.assistant.last .msg-actions.inline { opacity: 1; }
+.msg.streaming .msg-actions.inline { display: none; }
+.sent-context { font-size: 0.85em; color: var(--muted); margin: 4px 4px 0; }
+.sent-context summary { cursor: pointer; list-style: none; }
+.sent-context summary::-webkit-details-marker { display: none; }
+.sent-context summary::before { content: '›'; display: inline-block; width: 10px; transition: transform .1s; }
+.sent-context[open] summary::before { transform: rotate(90deg); }
+.ctx-row { padding-left: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.who { display: flex; align-items: center; gap: 6px; font-size: 0.88em; color: var(--muted); margin-bottom: 4px; min-width: 0; }
+.who .agent { font-weight: 600; color: var(--vscode-foreground); }
+.who .model { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.auto-badge { font-size: 0.82em; padding: 0 5px; border-radius: 4px; background: var(--accent-soft); color: var(--vscode-foreground); cursor: default; }
+.msg-foot { display: flex; align-items: center; gap: 8px; margin-top: 4px; min-height: 22px; font-size: 0.85em; }
+.msg-foot .status { text-transform: uppercase; font-size: 0.85em; letter-spacing: .03em; }
+.msg-foot .status.error, .msg-foot .status.refusal { color: var(--vscode-errorForeground); }
+.msg-foot .status.cancelled, .msg-foot .status.max_steps { color: var(--vscode-editorWarning-foreground); }
+.working { display: flex; gap: 4px; padding: 6px 0; }
+.working span { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); animation: aide-pulse 1.2s infinite ease-in-out; }
+.working span:nth-child(2) { animation-delay: .15s; }
+.working span:nth-child(3) { animation-delay: .3s; }
+@keyframes aide-pulse { 0%, 80%, 100% { opacity: .25; transform: scale(.8); } 40% { opacity: 1; transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .working span { animation: none; opacity: .6; } }
+
+/* markdown */
+.md { word-wrap: break-word; line-height: 1.55; }
+.md > :first-child { margin-top: 0; }
+.md p { margin: 6px 0; }
+.md ul, .md ol { padding-left: 20px; margin: 4px 0; }
+.md li { margin: 2px 0; }
+.md h1, .md h2, .md h3 { font-size: 1.05em; margin: 12px 0 4px; }
+.md table { border-collapse: collapse; margin: 6px 0; }
+.md th, .md td { border: 1px solid var(--line); padding: 3px 7px; }
+.md :not(pre) > code { background: var(--surface-2); padding: 1px 4px; border-radius: 4px; }
+.md code.file-link { cursor: pointer; color: var(--vscode-textLink-foreground); }
+.md blockquote { border-left: 2px solid var(--line-strong); margin: 6px 0; padding-left: 10px; color: var(--muted); }
+.codeblock { border: 1px solid var(--line); border-radius: 8px; margin: 8px 0; overflow: hidden; background: var(--vscode-textCodeBlock-background, var(--surface)); }
+.codebar { display: flex; align-items: center; justify-content: space-between; padding: 1px 4px 1px 10px; font-size: 0.82em; color: var(--muted); background: var(--surface); }
+.codebar .actions { display: flex; opacity: .55; }
+.codeblock:hover .codebar .actions { opacity: 1; }
+.codeblock pre { margin: 0; padding: 8px 10px; overflow-x: auto; }
+.thinking { color: var(--muted); font-size: 0.9em; margin: 4px 0; }
+.thinking summary { cursor: pointer; }
+.thinking-body { white-space: pre-wrap; padding: 4px 0 4px 12px; border-left: 2px solid var(--line); margin-left: 5px; max-height: 240px; overflow: auto; }
+
+/* tool calls: compact rows like Copilot / Antigravity */
+.tool { margin: 2px 0; border-radius: 6px; }
+.tool summary { display: flex; align-items: center; gap: 6px; padding: 2px 4px; cursor: pointer; list-style: none; border-radius: 6px; color: var(--muted); font-size: 0.92em; }
+.tool summary::-webkit-details-marker { display: none; }
+.tool summary:hover { background: var(--surface); color: var(--vscode-foreground); }
+.tool .tool-ic { color: var(--muted); }
+.tool .tool-summary { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tool .tool-summary.clickable:hover { text-decoration: underline; cursor: pointer; }
+.tool .chev { font-size: 12px; opacity: 0; transition: transform .1s; }
+.tool summary:hover .chev { opacity: .8; }
+.tool[open] .chev { transform: rotate(90deg); opacity: .8; }
+.tool .dur { font-size: 0.9em; }
+.tool-result { margin: 2px 0 6px 22px; padding: 6px 8px; max-height: 260px; overflow: auto; white-space: pre-wrap; word-break: break-word; font-size: 0.88em; border-radius: 6px; background: var(--surface); border: 1px solid var(--line); }
+.tool-result:empty { display: none; }
+.tool-result.terminal { background: var(--vscode-terminal-background, var(--vscode-panel-background)); color: var(--vscode-terminal-foreground, var(--vscode-foreground)); }
+.tool.failed summary { color: var(--vscode-errorForeground); }
+.notice { display: flex; gap: 6px; align-items: flex-start; margin: 6px 0; padding: 6px 9px; border-radius: 8px; font-size: 0.9em; background: var(--surface); border: 1px solid var(--line); }
+.notice .codicon { margin-top: 2px; }
+.notice.warn .codicon { color: var(--vscode-editorWarning-foreground); }
+.notice.error .codicon { color: var(--vscode-errorForeground); }
+.notice.info .codicon { color: var(--vscode-editorInfo-foreground); }
+.card { margin: 8px 0; padding: 8px 10px; border-radius: var(--r); background: var(--surface); border: 1px solid var(--line); font-size: 0.92em; }
+.card-title { display: flex; align-items: center; gap: 4px; font-weight: 600; }
+.card-actions { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.file-row { display: flex; align-items: center; gap: 6px; padding: 2px 0 2px 2px; min-width: 0; }
+.file-row .file-link { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-row .codicon { color: var(--muted); }
+
+/* inline confirmations and edit */
+.inline-panel, .edit-panel { margin: 6px 0; padding: 8px 10px; border-radius: var(--r); border: 1px solid var(--line-strong); background: var(--surface); display: flex; flex-direction: column; gap: 6px; font-size: 0.92em; }
+.edit-panel { width: 100%; }
+.edit-box { width: 100%; resize: vertical; border-radius: 6px; padding: 6px 8px; }
+.check { display: flex; gap: 6px; align-items: center; color: var(--muted); cursor: pointer; }
+.row-btns { display: flex; gap: 6px; }
+
+/* approvals */
+.approvals { padding: 0 12px; flex: none; }
+.approval { border: 1px solid var(--vscode-editorWarning-foreground); border-radius: var(--r); padding: 8px 10px; margin: 6px 0; background: var(--surface); }
+.approval.dangerous { border-color: var(--vscode-errorForeground); }
+.approval .ap-title { display: flex; gap: 6px; align-items: flex-start; word-break: break-word; }
+.approval .danger-text { color: var(--vscode-errorForeground); margin: 4px 0; }
+.approval .ap-detail { max-height: 160px; overflow: auto; background: var(--vscode-textCodeBlock-background); padding: 6px; margin: 6px 0; white-space: pre-wrap; border-radius: 6px; }
+.ap-buttons { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; align-items: center; }
+.small-select { font-size: 0.9em; padding: 1px 4px; border-radius: 6px; }
+
+/* chat terminal */
+.term { flex: none; margin: 0 12px 8px; border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; background: var(--vscode-terminal-background, var(--vscode-panel-background)); display: flex; flex-direction: column; max-height: 42vh; }
+.term-head { display: flex; align-items: center; gap: 6px; padding: 2px 4px 2px 10px; font-size: 0.88em; background: var(--surface); border-bottom: 1px solid var(--line); }
+.term-out { margin: 0; padding: 6px 10px; overflow: auto; flex: 1; min-height: 60px; white-space: pre-wrap; word-break: break-word; font-size: 0.88em; color: var(--vscode-terminal-foreground, var(--vscode-foreground)); }
+.term-cmd { color: var(--vscode-terminal-ansiCyan, var(--vscode-textLink-foreground)); }
+.term-exit { color: var(--vscode-terminal-ansiRed, var(--vscode-errorForeground)); }
+.term-line { display: flex; align-items: center; gap: 6px; padding: 3px 10px 5px; border-top: 1px solid var(--line); }
+.term-prompt { color: var(--vscode-terminal-ansiGreen, var(--muted)); }
+.term-input { flex: 1; background: transparent !important; border: none !important; outline: none !important; font-family: var(--vscode-editor-font-family); font-size: 0.9em; padding: 2px 0; }
+
+/* composer card */
+.composer { flex: none; margin: 0 12px 6px; padding: 8px 8px 6px 10px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); transition: border-color .12s; }
+.composer:focus-within { border-color: var(--line-strong); }
+.input-wrap { position: relative; }
+.composer textarea { width: 100%; resize: none; border: none !important; outline: none !important; background: transparent !important; padding: 2px 0; min-height: 22px; max-height: 240px; line-height: 1.45; font-size: 1em; color: var(--vscode-input-foreground); }
+.composer textarea::placeholder { color: var(--vscode-input-placeholderForeground, var(--muted)); }
+.composer-bar { display: flex; align-items: center; gap: 4px; margin-top: 6px; min-width: 0; }
+.icon-btn.round { border-radius: 50%; }
+.pill { display: inline-flex; align-items: center; gap: 4px; max-width: 55%; padding: 2px 7px; border-radius: 6px; border: none; background: transparent; color: var(--muted); font: inherit; font-size: 0.9em; cursor: pointer; white-space: nowrap; }
+.pill span { overflow: hidden; text-overflow: ellipsis; }
+.pill:hover { background: var(--vscode-toolbar-hoverBackground); color: var(--vscode-foreground); }
+.pill .codicon { font-size: 13px; }
+.pill.agent { color: var(--vscode-foreground); background: var(--accent-soft); }
+.intent { font-size: 0.85em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.send { width: 26px; height: 26px; padding: 0; justify-content: center; border-radius: 50%; background: var(--vscode-button-background); color: var(--vscode-button-foreground); border: none; }
+.send:hover { background: var(--vscode-button-hoverBackground); }
+.send.stop { background: var(--surface-2); color: var(--vscode-foreground); }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.chips:not(:empty) { margin-bottom: 6px; }
+.chip, .att { display: inline-flex; align-items: center; gap: 3px; max-width: 100%; padding: 1px 3px 1px 6px; border-radius: 6px; font-size: 0.85em; background: var(--surface-2); border: 1px solid var(--line); color: var(--vscode-foreground); }
+.chip .codicon, .att .codicon { font-size: 12px; color: var(--muted); }
+.chip-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px; }
+.chip.deduped { opacity: 0.55; }
+.att.clickable { cursor: pointer; }
+.att.terminal .codicon:first-child { color: var(--vscode-terminal-ansiGreen, var(--muted)); }
+.ctx-total { font-size: 0.82em; color: var(--muted); }
+.ctx-total.warn { color: var(--vscode-editorWarning-foreground); }
+.att-preview { position: absolute; left: 12px; right: 12px; bottom: 100%; margin-bottom: 6px; z-index: 15; max-height: 45vh; display: flex; flex-direction: column; border-radius: var(--r); border: 1px solid var(--line-strong); background: var(--vscode-editorWidget-background); box-shadow: 0 8px 24px var(--vscode-widget-shadow, rgba(0,0,0,.4)); }
+.msg .att-preview { position: static; margin: 6px 0 0; }
+.composer { position: relative; }
+.att-preview-head { display: flex; align-items: center; padding: 2px 4px 2px 10px; border-bottom: 1px solid var(--line); }
+.att-preview pre { margin: 0; padding: 8px 10px; overflow: auto; font-size: 0.86em; white-space: pre-wrap; word-break: break-word; }
+
+/* menus: slash commands, @ mentions, file links, model / add / more */
+.menu { position: absolute; bottom: calc(100% + 10px); left: -10px; right: -8px; max-height: 280px; overflow: auto; z-index: 30; padding: 4px;
+	background: var(--vscode-quickInput-background, var(--vscode-editorWidget-background)); border: 1px solid var(--line); border-radius: var(--r); box-shadow: 0 8px 24px var(--vscode-widget-shadow, rgba(0,0,0,.4)); }
+.menu.floating { position: fixed; right: auto; bottom: auto; }
+.menu-header { padding: 6px 8px 2px; font-size: 0.8em; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.menu-item { display: flex; gap: 8px; align-items: center; padding: 4px 8px; border-radius: 6px; cursor: pointer; white-space: nowrap; min-width: 0; }
+.menu-item .codicon { color: var(--muted); }
+.menu-ic { width: 16px; }
+.menu-item.sel, .menu-item:hover { background: var(--vscode-list-activeSelectionBackground, var(--vscode-list-hoverBackground)); color: var(--vscode-list-activeSelectionForeground, inherit); }
+.m-label { overflow: hidden; text-overflow: ellipsis; }
+.m-detail { flex: 1; overflow: hidden; text-overflow: ellipsis; font-size: 0.86em; text-align: right; }
+.m-check { color: var(--vscode-foreground) !important; }
+
+.disclaimer { flex: none; font-size: 0.8em; color: var(--muted); padding: 2px 14px 8px; opacity: .85; }
+.toast { position: absolute; left: 50%; bottom: 90px; transform: translateX(-50%); max-width: 90%; padding: 6px 12px; border-radius: 8px; font-size: 0.9em; z-index: 40; background: var(--vscode-notifications-background, var(--vscode-editorWidget-background)); color: var(--vscode-notifications-foreground, var(--vscode-foreground)); border: 1px solid var(--line); box-shadow: 0 6px 18px var(--vscode-widget-shadow, rgba(0,0,0,.4)); }
+
+/* ------------------------------------------------------------------ pages (settings / usage / inspector) */
+.page { max-width: 1100px; margin: 0 auto; padding: 16px 24px 40px; }
+.page h1 { font-size: 1.5em; font-weight: 600; margin: 4px 0 2px; }
+.page h2 { font-size: 1.15em; font-weight: 600; margin: 22px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border); }
+.page h3 { font-size: 1em; margin: 14px 0 6px; }
+.page .lead { color: var(--muted); margin: 0 0 12px; }
+.tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--border); margin: 12px 0; flex-wrap: wrap; }
+.tab { padding: 6px 12px; cursor: pointer; border-bottom: 2px solid transparent; color: var(--muted); background: none; border-top: 0; border-left: 0; border-right: 0; font: inherit; }
+.tab.active { color: var(--vscode-foreground); border-bottom-color: var(--vscode-panelTitle-activeBorder, var(--accent)); }
+.card { border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; margin: 8px 0; background: var(--bg-soft); }
+.card-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.card-head .name { font-weight: 600; }
+.badge { font-size: 0.8em; padding: 0 6px; border-radius: 8px; background: var(--vscode-badge-background); color: var(--vscode-badge-foreground); }
+.badge.good { background: var(--vscode-testing-iconPassed, #2ea043); color: #fff; }
+.badge.bad { background: var(--vscode-errorForeground); color: #fff; }
+.grid { display: grid; grid-template-columns: 180px 1fr; gap: 6px 12px; align-items: center; margin-top: 8px; }
+.grid label { color: var(--muted); }
+.grid input, .grid select { width: 100%; max-width: 480px; }
+.row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+table.data { border-collapse: collapse; width: 100%; margin: 6px 0; font-size: 0.95em; }
+table.data th { text-align: left; font-weight: 600; color: var(--muted); border-bottom: 1px solid var(--border); padding: 4px 6px; }
+table.data td { border-bottom: 1px solid var(--border); padding: 4px 6px; vertical-align: top; }
+table.data tr.clickable { cursor: pointer; }
+table.data tr.clickable:hover, table.data tr.sel { background: var(--vscode-list-hoverBackground); }
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+.stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
+.stat { border: 1px solid var(--border); border-radius: 6px; padding: 10px; background: var(--bg-soft); }
+.stat .label { color: var(--muted); font-size: 0.88em; }
+.stat .value { font-size: 1.5em; font-weight: 600; font-variant-numeric: tabular-nums; }
+.stat .sub { color: var(--muted); font-size: 0.85em; }
+.meter { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; margin-top: 6px; }
+.meter > div { height: 100%; background: var(--vscode-progressBar-background); }
+.meter.warn > div { background: var(--vscode-editorWarning-foreground); }
+.meter.over > div { background: var(--vscode-errorForeground); }
+.bars { display: flex; align-items: flex-end; gap: 2px; height: 90px; border-bottom: 1px solid var(--border); padding-top: 6px; }
+.bars .bar { flex: 1; background: var(--vscode-progressBar-background); min-height: 1px; border-radius: 2px 2px 0 0; opacity: 0.85; }
+.bars .bar:hover { opacity: 1; }
+pre.block { background: var(--vscode-textCodeBlock-background); padding: 8px; border-radius: var(--radius); overflow: auto; max-height: 420px; white-space: pre-wrap; word-break: break-word; }
+.split { display: grid; grid-template-columns: minmax(260px, 380px) 1fr; gap: 16px; }
+@media (max-width: 760px) { .split { grid-template-columns: 1fr; } .grid { grid-template-columns: 1fr; } }
+.kv { display: grid; grid-template-columns: 150px 1fr; gap: 3px 10px; }
+.kv .k { color: var(--muted); }
+.msg-block { border-left: 3px solid var(--border); padding-left: 8px; margin: 6px 0; }
+.msg-block.user { border-color: var(--vscode-editorInfo-foreground); }
+.msg-block.assistant { border-color: var(--vscode-testing-iconPassed, #2ea043); }
+.msg-block.tool { border-color: var(--vscode-editorWarning-foreground); }
+.help { color: var(--muted); font-size: 0.9em; }
+.inline-error { color: var(--vscode-errorForeground); font-size: 0.92em; }
+.check-pill { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border: 1px solid var(--border); border-radius: 14px; cursor: pointer; }
+table.roles select { width: 100%; max-width: 380px; }
+table.roles td { vertical-align: middle; }
+details.advanced { margin-top: 18px; }
+details.advanced > summary { cursor: pointer; font-weight: 600; margin-bottom: 6px; }
+.page .notice { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.page .btn { border-radius: 6px; }
+.page select, .page input[type=text], .page input[type=number], .page input[type=password], .page textarea { border-radius: 6px; padding: 4px 8px; }
+.page .card { border-radius: 10px; }

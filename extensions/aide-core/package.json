@@ -1,0 +1,377 @@
+{
+  "name": "aide-core",
+  "displayName": "AIDE Core",
+  "description": "AIDE's AI platform: multi-provider routing, agents, MCP, context engine, usage limits, change review, GitHub, connectors and the extension builder.",
+  "version": "2.0.0",
+  "publisher": "aide",
+  "license": "MIT",
+  "icon": "media/AIDE_Logo.png",
+  "engines": { "vscode": "^1.100.0" },
+  "categories": ["AI", "Chat", "Programming Languages", "Other"],
+  "keywords": ["ai", "agents", "mcp", "llm", "claude", "ollama"],
+  "main": "./dist/extension.js",
+  "activationEvents": ["onStartupFinished"],
+  "capabilities": { "untrustedWorkspaces": { "supported": "limited", "description": "Agents cannot run commands or start workspace MCP servers in untrusted workspaces." } },
+  "contributes": {
+    "configurationDefaults": {
+      "workbench.colorTheme": "AIDE Dark",
+      "workbench.startupEditor": "welcomePage",
+      "workbench.secondarySideBar.defaultVisibility": "visible"
+    },
+    "themes": [
+      { "label": "AIDE Dark", "uiTheme": "vs-dark", "path": "./resources/themes/aide-dark.json" },
+      { "label": "AIDE Light", "uiTheme": "vs", "path": "./resources/themes/aide-light.json" }
+    ],
+    "viewsContainers": {
+      "activitybar": [{ "id": "aide", "title": "AIDE", "icon": "media/aide-activity.svg" }],
+      "secondarySidebar": [{ "id": "aide-chat", "title": "AI Chat", "icon": "media/aide-activity.svg" }]
+    },
+    "views": {
+      "aide-chat": [{ "type": "webview", "id": "aide.chat", "name": "Chat", "icon": "media/aide-activity.svg" }],
+      "aide": [
+        { "id": "aide.changes", "name": "AI Changes", "icon": "$(diff)" },
+        { "id": "aide.checkpoints", "name": "Checkpoints", "icon": "$(history)", "visibility": "collapsed" },
+        { "id": "aide.agents", "name": "Agents", "icon": "$(hubot)" },
+        { "id": "aide.mcp", "name": "MCP Servers", "icon": "$(server-process)" },
+        { "id": "aide.connectors", "name": "Connectors", "icon": "$(plug)", "visibility": "collapsed" }
+      ],
+      "scm": [{ "id": "aide.github", "name": "GitHub", "icon": "$(github)" }]
+    },
+    "viewsWelcome": [
+      { "view": "aide.changes", "contents": "Files changed by AI agents appear here for review. Accept or reject whole files, or individual hunks from the editor.\n[Open AI Chat](command:aide.chat.focus)" },
+      { "view": "aide.mcp", "contents": "No MCP servers configured. MCP servers give agents new tools (databases, browsers, APIs...).\n[Add MCP Server](command:aide.mcp.add)\n[Edit ~/.aide/mcp.json](command:aide.mcp.openConfig)" },
+      { "view": "aide.checkpoints", "contents": "AIDE creates a checkpoint automatically before an agent changes files. Restore one to undo everything after it." }
+    ],
+    "walkthroughs": [
+      {
+        "id": "aide.welcome",
+        "title": "Get started with AIDE 2.0",
+        "description": "A full IDE with AI built in, on your terms.",
+        "steps": [
+          { "id": "providers", "title": "Connect an AI provider", "description": "Local (Ollama, LM Studio) or cloud (Claude, OpenAI, Gemini). Keys stay in your OS keychain.\n[Open AIDE Settings](command:aide.settings.open)", "media": { "markdown": "media/walkthrough/providers.md" } },
+          { "id": "folder", "title": "Open a project", "description": "Everything works without AI: editor, terminal, Git, debugging, extensions.\n[Open Folder](command:workbench.action.files.openFolder)\n[New Project from Template](command:aide.project.new)", "media": { "markdown": "media/walkthrough/providers.md" }, "completionEvents": ["onContext:workspaceFolderCount > 0"] },
+          { "id": "chat", "title": "Chat with agents", "description": "Ask questions or let the Coder make changes. You review everything.\n[Open AI Chat](command:aide.chat.focus)\n[Analyze this project](command:aide.project.analyze)", "media": { "markdown": "media/walkthrough/chat.md" } },
+          { "id": "extend", "title": "Extend AIDE", "description": "Build extensions, custom agents and MCP integrations - with AI.\n[Build Extension with AI](command:aide.extensions.buildWithAi)\n[New Custom Agent](command:aide.agents.new)", "media": { "markdown": "media/walkthrough/extend.md" } }
+        ]
+      }
+    ],
+    "commands": [
+      { "command": "aide.chat.open", "title": "Open Chat", "category": "AI", "icon": "$(comment-discussion)" },
+      { "command": "aide.chat.new", "title": "New Chat", "category": "AI", "icon": "$(add)" },
+      { "command": "aide.chat.ask", "title": "Ask...", "category": "AI" },
+      { "command": "aide.chat.addSelection", "title": "Add Selection to Chat", "category": "AI", "icon": "$(comment-discussion)" },
+      { "command": "aide.chat.addFile", "title": "Add to AI Chat", "category": "AI" },
+      { "command": "aide.chat.cancel", "title": "Stop Chat Response", "category": "AI", "icon": "$(debug-stop)" },
+      { "command": "aide.chat.addTerminalSelection", "title": "Add Terminal Selection to Chat", "category": "AI", "icon": "$(comment-discussion)" },
+      { "command": "aide.chat.openLog", "title": "Open Chat Log", "category": "AI" },
+      { "command": "aide.chat.openLogsFolder", "title": "Open Chat Logs Folder", "category": "AI" },
+      { "command": "aide.memory.openUser", "title": "Open Personal Memory", "category": "AIDE" },
+      { "command": "aide.run.file", "title": "Run File", "category": "AIDE", "icon": "$(play)" },
+      { "command": "aide.language.installSupport", "title": "Install Language Support for Current File", "category": "AIDE" },
+      { "command": "aide.python.install", "title": "Install Python", "category": "AIDE" },
+      { "command": "aide.agent.stopAll", "title": "Stop All AI Operations", "category": "AI", "icon": "$(debug-stop)" },
+      { "command": "aide.agent.run", "title": "Run Agent...", "category": "AI", "icon": "$(play)" },
+      { "command": "aide.agent.select", "title": "Select Chat Agent", "category": "AI" },
+      { "command": "aide.model.select", "title": "Change AI Model", "category": "AIDE" },
+      { "command": "aide.model.refresh", "title": "Refresh Model Lists", "category": "AIDE", "icon": "$(refresh)" },
+      { "command": "aide.settings.open", "title": "Open AI Settings", "category": "AIDE", "icon": "$(settings-gear)" },
+      { "command": "aide.settings.openJson", "title": "Open All AIDE Settings", "category": "AIDE" },
+      { "command": "aide.usage.open", "title": "Usage & Diagnostics", "category": "AIDE", "icon": "$(graph)" },
+      { "command": "aide.inspector.open", "title": "Context Inspector", "category": "AIDE", "icon": "$(inspect)" },
+      { "command": "aide.secret.store", "title": "Store Secret (for MCP/config placeholders)", "category": "AIDE" },
+      { "command": "aide.welcome", "title": "Get Started", "category": "AIDE" },
+      { "command": "aide.logs.show", "title": "Show Logs", "category": "AIDE" },
+      { "command": "aide.logs.copy", "title": "Copy Logs", "category": "AIDE" },
+      { "command": "aide.logs.export", "title": "Export Logs...", "category": "AIDE" },
+      { "command": "aide.logs.openFolder", "title": "Open Log Folder", "category": "AIDE" },
+      { "command": "aide.logs.clear", "title": "Clear Logs", "category": "AIDE" },
+
+      { "command": "aide.inline.actions", "title": "AI Actions...", "category": "AI", "icon": "$(sparkle)" },
+      { "command": "aide.inline.edit", "title": "Edit Selection with Instruction...", "category": "AI" },
+      { "command": "aide.inline.explain", "title": "Explain Selection", "category": "AI" },
+      { "command": "aide.inline.generate", "title": "Generate Code at Cursor...", "category": "AI" },
+      { "command": "aide.inline.generateRegex", "title": "Generate Regex...", "category": "AI" },
+      { "command": "aide.inline.generateSql", "title": "Generate SQL...", "category": "AI" },
+      { "command": "aide.inline.toggleCompletions", "title": "Toggle Inline Completions", "category": "AI" },
+      { "command": "aide.errors.fixAtCursor", "title": "Fix Current Error", "category": "AI" },
+      { "command": "aide.errors.fixLastCommand", "title": "Fix Last Failed Terminal Command", "category": "AI" },
+
+      { "command": "aide.changes.openDiff", "title": "Open AI Change Diff", "category": "AI Changes", "icon": "$(diff)" },
+      { "command": "aide.changes.acceptFile", "title": "Accept File", "category": "AI Changes", "icon": "$(check)" },
+      { "command": "aide.changes.rejectFile", "title": "Reject File (revert)", "category": "AI Changes", "icon": "$(discard)" },
+      { "command": "aide.changes.acceptAll", "title": "Accept All", "category": "AI Changes", "icon": "$(check-all)" },
+      { "command": "aide.changes.rejectAll", "title": "Reject All (revert)", "category": "AI Changes", "icon": "$(close-all)" },
+      { "command": "aide.changes.acceptHunk", "title": "Accept Hunk", "category": "AI Changes" },
+      { "command": "aide.changes.rejectHunk", "title": "Reject Hunk", "category": "AI Changes" },
+      { "command": "aide.checkpoints.restore", "title": "Restore Checkpoint...", "category": "AI Changes", "icon": "$(discard)" },
+      { "command": "aide.checkpoints.delete", "title": "Delete Checkpoint", "category": "AI Changes", "icon": "$(trash)" },
+
+      { "command": "aide.agents.new", "title": "New Custom Agent...", "category": "AIDE", "icon": "$(add)" },
+      { "command": "aide.agents.open", "title": "Open Agent File", "category": "AIDE", "icon": "$(go-to-file)" },
+      { "command": "aide.agents.use", "title": "Use Agent in Chat", "category": "AIDE", "icon": "$(comment-discussion)" },
+      { "command": "aide.agents.reload", "title": "Reload Agents", "category": "AIDE", "icon": "$(refresh)" },
+
+      { "command": "aide.mcp.add", "title": "Add Server...", "category": "MCP", "icon": "$(add)" },
+      { "command": "aide.mcp.start", "title": "Start Server", "category": "MCP", "icon": "$(play)" },
+      { "command": "aide.mcp.stop", "title": "Stop Server", "category": "MCP", "icon": "$(debug-stop)" },
+      { "command": "aide.mcp.restart", "title": "Restart Server", "category": "MCP", "icon": "$(debug-restart)" },
+      { "command": "aide.mcp.test", "title": "Test Server", "category": "MCP", "icon": "$(beaker)" },
+      { "command": "aide.mcp.toggle", "title": "Enable/Disable Server", "category": "MCP" },
+      { "command": "aide.mcp.remove", "title": "Remove Server", "category": "MCP", "icon": "$(trash)" },
+      { "command": "aide.mcp.openConfig", "title": "Edit Configuration...", "category": "MCP", "icon": "$(json)" },
+      { "command": "aide.mcp.showLogs", "title": "Show Server Logs", "category": "MCP", "icon": "$(output)" },
+
+      { "command": "aide.git.commitMessage", "title": "Generate Commit Message", "category": "Git", "icon": "$(sparkle)" },
+      { "command": "aide.git.explainChanges", "title": "Explain Changes with AI", "category": "Git" },
+      { "command": "aide.git.reviewChanges", "title": "Review Changes with AI", "category": "Git", "icon": "$(eye)" },
+      { "command": "aide.git.prDescription", "title": "Generate PR Description", "category": "Git" },
+
+      { "command": "aide.github.signIn", "title": "Sign In", "category": "GitHub", "icon": "$(sign-in)" },
+      { "command": "aide.github.setToken", "title": "Use Personal Access Token...", "category": "GitHub" },
+      { "command": "aide.github.signOut", "title": "Sign Out", "category": "GitHub" },
+      { "command": "aide.github.refresh", "title": "Refresh", "category": "GitHub", "icon": "$(refresh)" },
+      { "command": "aide.github.clone", "title": "Clone Repository...", "category": "GitHub", "icon": "$(repo-clone)" },
+      { "command": "aide.github.createRepo", "title": "Create Repository...", "category": "GitHub" },
+      { "command": "aide.github.createIssue", "title": "Create Issue...", "category": "GitHub", "icon": "$(issue-opened)" },
+      { "command": "aide.github.comment", "title": "Comment...", "category": "GitHub", "icon": "$(comment)" },
+      { "command": "aide.github.createPR", "title": "Create Pull Request", "category": "GitHub", "icon": "$(git-pull-request-create)" },
+      { "command": "aide.github.fixIssue", "title": "Fix Issue with AI...", "category": "GitHub", "icon": "$(hubot)" },
+      { "command": "aide.github.reviewPR", "title": "Review Pull Request with AI...", "category": "GitHub", "icon": "$(eye)" },
+      { "command": "aide.github.viewIssue", "title": "View", "category": "GitHub" },
+      { "command": "aide.github.openItem", "title": "Open on GitHub", "category": "GitHub" },
+
+      { "command": "aide.connectors.connect", "title": "Connect", "category": "Connectors", "icon": "$(plug)" },
+      { "command": "aide.connectors.disconnect", "title": "Disconnect", "category": "Connectors", "icon": "$(debug-disconnect)" },
+      { "command": "aide.connectors.configureDrive", "title": "Configure Google Drive OAuth Client...", "category": "Connectors", "icon": "$(gear)" },
+      { "command": "aide.connectors.preview", "title": "Preview", "category": "Connectors", "icon": "$(eye)" },
+      { "command": "aide.connectors.import", "title": "Import into Workspace", "category": "Connectors", "icon": "$(cloud-download)" },
+      { "command": "aide.connectors.addToChat", "title": "Add to AI Chat", "category": "Connectors", "icon": "$(comment-discussion)" },
+      { "command": "aide.connectors.search", "title": "Search...", "category": "Connectors", "icon": "$(search)" },
+
+      { "command": "aide.extensions.new", "title": "New Extension...", "category": "AIDE", "icon": "$(add)" },
+      { "command": "aide.extensions.buildWithAi", "title": "Build Extension with AI...", "category": "AIDE", "icon": "$(sparkle)" },
+      { "command": "aide.extensions.run", "title": "Run Extension in Development Host", "category": "AIDE", "icon": "$(play)" },
+      { "command": "aide.extensions.package", "title": "Package Extension (VSIX)", "category": "AIDE" },
+      { "command": "aide.extensions.install", "title": "Install Extension from Folder", "category": "AIDE" },
+      { "command": "aide.extensions.uninstall", "title": "Uninstall Extension...", "category": "AIDE" },
+      { "command": "aide.extensions.openApiDocs", "title": "Open Extension API Docs", "category": "AIDE" },
+
+      { "command": "aide.workflows.run", "title": "Run Workflow...", "category": "Workflows", "icon": "$(run-all)" },
+      { "command": "aide.workflows.new", "title": "New Workflow", "category": "Workflows" },
+      { "command": "aide.layout.apply", "title": "Apply Layout...", "category": "AIDE", "icon": "$(layout)" },
+      { "command": "aide.layout.save", "title": "Save Current Layout...", "category": "AIDE" },
+      { "command": "aide.profile.export", "title": "Export AIDE Profile...", "category": "AIDE" },
+      { "command": "aide.profile.import", "title": "Import AIDE Profile...", "category": "AIDE" },
+      { "command": "aide.project.new", "title": "New Project from Template...", "category": "Workspace" },
+      { "command": "aide.project.init", "title": "Initialize .aide Project Context", "category": "Workspace" },
+      { "command": "aide.project.analyze", "title": "Analyze Project (AI Onboarding)", "category": "AI" },
+      { "command": "aide.project.openInstructions", "title": "Open Project AI Instructions", "category": "Workspace" },
+      { "command": "aide.project.openMemory", "title": "Open Project Memory", "category": "Workspace" },
+      { "command": "aide.dev.formatJson", "title": "Format JSON", "category": "Developer Tools" },
+      { "command": "aide.dev.minifyJson", "title": "Minify JSON", "category": "Developer Tools" },
+      { "command": "aide.dev.regexTester", "title": "Regex Tester", "category": "Developer Tools" },
+      { "command": "aide.dev.ports", "title": "Listening Ports...", "category": "Developer Tools" },
+      { "command": "aide.dev.env", "title": "Environment Variables...", "category": "Developer Tools" }
+    ],
+    "submenus": [{ "id": "aide.editor.ai", "label": "AI" }],
+    "menus": {
+      "editor/context": [{ "submenu": "aide.editor.ai", "group": "0_ai@1" }],
+      "aide.editor.ai": [
+        { "command": "aide.inline.actions", "group": "1@1" },
+        { "command": "aide.inline.explain", "group": "1@2", "when": "editorHasSelection" },
+        { "command": "aide.inline.edit", "group": "1@3" },
+        { "command": "aide.chat.addSelection", "group": "2@1" },
+        { "command": "aide.errors.fixAtCursor", "group": "2@2" },
+        { "command": "aide.inline.generate", "group": "3@1" }
+      ],
+      "explorer/context": [{ "command": "aide.chat.addFile", "group": "z_aide" }],
+      "editor/title": [
+        { "command": "aide.changes.openDiff", "when": "aide.hasPendingChanges && resourceScheme == file", "group": "navigation@9" },
+        { "command": "aide.run.file", "when": "resourceScheme == file && aide.canRunFile && !aide.langRunButton && !isInDiffEditor", "group": "navigation@0" }
+      ],
+      "terminal/context": [{ "command": "aide.chat.addTerminalSelection", "group": "z_aide" }],
+      "scm/title": [
+        { "command": "aide.git.commitMessage", "when": "scmProvider == git", "group": "navigation@0" },
+        { "command": "aide.git.reviewChanges", "when": "scmProvider == git", "group": "inline" }
+      ],
+      "view/title": [
+        { "command": "aide.changes.acceptAll", "when": "view == aide.changes && aide.hasPendingChanges", "group": "navigation@1" },
+        { "command": "aide.changes.rejectAll", "when": "view == aide.changes && aide.hasPendingChanges", "group": "navigation@2" },
+        { "command": "aide.checkpoints.restore", "when": "view == aide.checkpoints", "group": "navigation" },
+        { "command": "aide.agents.new", "when": "view == aide.agents", "group": "navigation@1" },
+        { "command": "aide.agents.reload", "when": "view == aide.agents", "group": "navigation@2" },
+        { "command": "aide.mcp.add", "when": "view == aide.mcp", "group": "navigation@1" },
+        { "command": "aide.mcp.openConfig", "when": "view == aide.mcp", "group": "navigation@2" },
+        { "command": "aide.github.refresh", "when": "view == aide.github", "group": "navigation@1" },
+        { "command": "aide.github.createPR", "when": "view == aide.github", "group": "navigation@2" },
+        { "command": "aide.github.createIssue", "when": "view == aide.github", "group": "navigation@3" },
+        { "command": "aide.github.clone", "when": "view == aide.github", "group": "1@1" },
+        { "command": "aide.github.fixIssue", "when": "view == aide.github", "group": "1@2" },
+        { "command": "aide.github.signOut", "when": "view == aide.github", "group": "2@1" },
+        { "command": "aide.connectors.search", "when": "view == aide.connectors", "group": "navigation@1" },
+        { "command": "aide.connectors.configureDrive", "when": "view == aide.connectors", "group": "1@1" }
+      ],
+      "view/item/context": [
+        { "command": "aide.changes.acceptFile", "when": "view == aide.changes && viewItem == aideChange", "group": "inline@1" },
+        { "command": "aide.changes.rejectFile", "when": "view == aide.changes && viewItem == aideChange", "group": "inline@2" },
+        { "command": "aide.checkpoints.restore", "when": "view == aide.checkpoints && viewItem == aideCheckpoint", "group": "inline@1" },
+        { "command": "aide.checkpoints.delete", "when": "view == aide.checkpoints && viewItem == aideCheckpoint", "group": "1@1" },
+        { "command": "aide.agents.use", "when": "view == aide.agents && viewItem =~ /aideAgent/", "group": "inline@1" },
+        { "command": "aide.agents.open", "when": "view == aide.agents && viewItem == aideAgent.file", "group": "inline@2" },
+        { "command": "aide.mcp.start", "when": "view == aide.mcp && viewItem =~ /aideMcp\\.(stopped|error)/", "group": "inline@1" },
+        { "command": "aide.mcp.stop", "when": "view == aide.mcp && viewItem == aideMcp.running", "group": "inline@1" },
+        { "command": "aide.mcp.restart", "when": "view == aide.mcp && viewItem =~ /aideMcp/", "group": "1@1" },
+        { "command": "aide.mcp.test", "when": "view == aide.mcp && viewItem =~ /aideMcp/", "group": "1@2" },
+        { "command": "aide.mcp.showLogs", "when": "view == aide.mcp && viewItem =~ /aideMcp/", "group": "1@3" },
+        { "command": "aide.mcp.toggle", "when": "view == aide.mcp && viewItem =~ /aideMcp/", "group": "2@1" },
+        { "command": "aide.mcp.remove", "when": "view == aide.mcp && viewItem =~ /aideMcp/", "group": "2@2" },
+        { "command": "aide.github.fixIssue", "when": "view == aide.github && viewItem == aideGhIssue", "group": "inline@1" },
+        { "command": "aide.github.reviewPR", "when": "view == aide.github && viewItem == aideGhPull", "group": "inline@1" },
+        { "command": "aide.github.comment", "when": "view == aide.github && viewItem =~ /aideGh/", "group": "1@1" },
+        { "command": "aide.connectors.disconnect", "when": "view == aide.connectors && viewItem == aideConnector.connected", "group": "inline@1" },
+        { "command": "aide.connectors.import", "when": "view == aide.connectors && viewItem =~ /aideConnectorItem/", "group": "inline@1" },
+        { "command": "aide.connectors.addToChat", "when": "view == aide.connectors && viewItem == aideConnectorItem.file", "group": "inline@2" }
+      ],
+      "commandPalette": [
+        { "command": "aide.changes.acceptHunk", "when": "false" },
+        { "command": "aide.changes.rejectHunk", "when": "false" },
+        { "command": "aide.checkpoints.delete", "when": "false" },
+        { "command": "aide.agents.open", "when": "false" },
+        { "command": "aide.agents.use", "when": "false" },
+        { "command": "aide.github.viewIssue", "when": "false" },
+        { "command": "aide.github.openItem", "when": "false" },
+        { "command": "aide.connectors.preview", "when": "false" },
+        { "command": "aide.connectors.import", "when": "false" },
+        { "command": "aide.connectors.addToChat", "when": "false" },
+        { "command": "aide.connectors.disconnect", "when": "false" },
+        { "command": "aide.chat.addFile", "when": "false" }
+      ]
+    },
+    "keybindings": [
+      { "command": "aide.chat.focus", "key": "ctrl+shift+a", "mac": "cmd+shift+a" },
+      { "command": "aide.inline.actions", "key": "ctrl+alt+i", "mac": "cmd+alt+i", "when": "editorTextFocus" },
+      { "command": "aide.inline.edit", "key": "ctrl+alt+k", "mac": "cmd+alt+k", "when": "editorTextFocus" },
+      { "command": "aide.inline.explain", "key": "ctrl+alt+e", "mac": "cmd+alt+e", "when": "editorTextFocus && editorHasSelection" },
+      { "command": "aide.chat.addSelection", "key": "ctrl+alt+l", "mac": "cmd+alt+l", "when": "editorTextFocus" },
+      { "command": "aide.chat.addTerminalSelection", "key": "ctrl+alt+l", "mac": "cmd+alt+l", "when": "terminalFocus" },
+      { "command": "aide.run.file", "key": "ctrl+alt+r", "mac": "cmd+alt+r", "when": "editorTextFocus || resourceScheme == file" },
+      { "command": "aide.errors.fixAtCursor", "key": "ctrl+alt+.", "mac": "cmd+alt+.", "when": "editorTextFocus" },
+      { "command": "aide.agent.stopAll", "key": "ctrl+alt+backspace", "mac": "cmd+alt+backspace" },
+      { "command": "aide.workflows.run", "key": "ctrl+alt+w", "mac": "cmd+alt+w" },
+      { "command": "aide.chat.new", "key": "ctrl+alt+n", "mac": "cmd+alt+n", "when": "focusedView == aide.chat" }
+    ],
+    "configuration": [
+      {
+        "title": "AI Providers",
+        "order": 1,
+        "properties": {
+          "aide.providers": {
+            "type": "array",
+            "order": 1,
+            "markdownDescription": "AI providers. Each entry: `id`, `kind` (`anthropic` | `openai` | `openai-compatible` | `ollama` | `gemini`), optional `label`, `baseUrl`, `local`, `enabled`, `models` (overrides such as prices/context), `options`. API keys are **not** stored here - use **AIDE: Open AI Settings**.",
+            "default": [{ "id": "ollama", "kind": "ollama", "label": "Ollama (local)", "local": true }],
+            "items": {
+              "type": "object",
+              "required": ["id", "kind"],
+              "properties": {
+                "id": { "type": "string" },
+                "kind": { "type": "string", "enum": ["anthropic", "openai", "openai-compatible", "ollama", "gemini"] },
+                "label": { "type": "string" },
+                "baseUrl": { "type": "string" },
+                "local": { "type": "boolean" },
+                "enabled": { "type": "boolean" },
+                "headers": { "type": "object" },
+                "options": { "type": "object" },
+                "models": { "type": "array", "items": { "type": "object", "properties": { "id": { "type": "string" }, "label": { "type": "string" }, "contextWindow": { "type": "number" }, "maxOutput": { "type": "number" }, "inputPrice": { "type": "number", "description": "USD per 1M input tokens" }, "outputPrice": { "type": "number", "description": "USD per 1M output tokens" }, "capabilities": { "type": "array", "items": { "type": "string", "enum": ["chat", "tools", "vision", "embeddings", "reasoning", "completion"] } } } } }
+              }
+            }
+          },
+          "aide.ai.maxOutputTokens": { "type": "number", "default": 16000, "minimum": 256, "description": "Default maximum output tokens per model request." }
+        }
+      },
+      {
+        "title": "AI Routing",
+        "order": 2,
+        "properties": {
+          "aide.routing.autoProviders": { "type": "array", "items": { "type": "string" }, "default": [], "markdownDescription": "Providers Auto may choose models from (provider ids, e.g. `[\"ollama\"]`). Empty = every enabled provider. Auto picks a model per role: a small fast model for chat, a tool-calling coder model for coding, the most capable one for planning, review and debugging." },
+          "aide.routing.strategy": { "type": "string", "enum": ["rules", "local-first", "cloud-first", "cost", "capability"], "default": "rules", "description": "How candidate models are ordered for each task." },
+          "aide.routing.default": { "type": "array", "items": { "type": "string" }, "default": [], "markdownDescription": "Last-resort models when a task has no rule and Auto finds no suitable model, as `provider/model` references or aliases, in fallback order." },
+          "aide.routing.rules": { "type": "object", "default": {}, "markdownDescription": "Per-task (role) models; a task without a rule uses Auto. E.g. `{ \"autocomplete\": \"local_fast\", \"coding\": [\"claude\", \"ollama/llama3.1:latest\"], \"vision\": \"gemini/gemini-2.5-pro\" }`. Tasks: chat, coding, planning, review, debug, explain, simple_edits, autocomplete, commit_message, summarize, vision, embeddings, background.", "additionalProperties": { "type": ["string", "array"] } },
+          "aide.routing.aliases": { "type": "object", "default": {}, "markdownDescription": "Model aliases, e.g. `{ \"claude\": \"anthropic/claude-opus-5-5\", \"local_fast\": \"ollama/llama3.2:1b\" }`.", "additionalProperties": { "type": "string" } },
+          "aide.routing.autoFallback": { "type": "boolean", "default": true, "description": "When every routed model fails, try any other available model (never used for autocomplete)." }
+        }
+      },
+      {
+        "title": "AI Usage Limits",
+        "order": 3,
+        "properties": {
+          "aide.limits.dailyTokens": { "type": ["number", "null"], "default": null, "description": "Daily token limit for cloud models (empty = none)." },
+          "aide.limits.dailyCost": { "type": ["number", "null"], "default": null, "description": "Daily cost limit in USD for cloud models." },
+          "aide.limits.monthlyTokens": { "type": ["number", "null"], "default": null },
+          "aide.limits.monthlyCost": { "type": ["number", "null"], "default": null, "description": "Monthly cost limit in USD." },
+          "aide.limits.perRequestTokens": { "type": ["number", "null"], "default": null, "description": "Block requests whose estimated input exceeds this many tokens." },
+          "aide.limits.providers": { "type": "object", "default": {}, "markdownDescription": "Per-provider limits: `{ \"anthropic\": { \"daily\": { \"cost\": 5 }, \"monthly\": { \"cost\": 50 } } }`." },
+          "aide.limits.warnAt": { "type": "array", "items": { "type": "number" }, "default": [0.8, 0.95], "description": "Fractions of a limit at which to warn." },
+          "aide.limits.onLimit": { "type": "string", "enum": ["ask", "stop", "switch-model", "switch-provider", "local", "reduce-context"], "default": "ask", "description": "What to do when a limit would be exceeded." }
+        }
+      },
+      {
+        "title": "AI Context & Agents",
+        "order": 4,
+        "properties": {
+          "aide.context.strategy": { "type": "string", "enum": ["minimal", "balanced", "deep", "maximum"], "default": "balanced", "description": "Default amount of automatic context sent with chat requests." },
+          "aide.context.budget.minimal": { "type": "number", "default": 0, "description": "Token budget override (0 = default 4k)." },
+          "aide.context.budget.balanced": { "type": "number", "default": 0, "description": "Token budget override (0 = default 16k)." },
+          "aide.context.budget.deep": { "type": "number", "default": 0, "description": "Token budget override (0 = default 48k)." },
+          "aide.context.budget.maximum": { "type": "number", "default": 0, "description": "Token budget override (0 = default 120k)." },
+          "aide.context.historyBudget": { "type": "number", "default": 60000, "description": "Conversation history above this many tokens is compressed/summarized." },
+          "aide.agents.default": { "type": "string", "default": "auto", "description": "Agent for chat messages. \"auto\" chooses the agent from each message (Coder for build/change requests, Chat for questions, Debugger for errors, Planner, Reviewer, Tester, Documenter). Use /code, /plan, /debug... in the chat to force one." },
+          "aide.chat.logs": { "type": "boolean", "default": true, "description": "Keep a readable Markdown log of every chat (with tool calls) under ~/.aide/logs/chats." },
+          "aide.languageSupport.recommend": { "type": "boolean", "default": true, "description": "Offer to install the language extension (e.g. Python) when you open or create a file that needs it." },
+          "aide.chat.openOnStartup": { "type": "boolean", "default": true, "description": "Reveal the AI chat in the secondary side bar when AIDE starts." },
+          "aide.agents.revealTerminal": { "type": "boolean", "default": true, "description": "Show the AIDE Agent terminal when an agent runs a command." },
+          "aide.inlineCompletion.enabled": { "type": "boolean", "default": true, "description": "Inline AI completions (only active when an \"autocomplete\" routing rule is set)." },
+          "aide.inlineCompletion.debounceMs": { "type": "number", "default": 350 },
+          "aide.inlineCompletion.maxTokens": { "type": "number", "default": 96 },
+          "aide.inlineCompletion.maxLines": { "type": "number", "default": 8 },
+          "aide.codeLens.enabled": { "type": "boolean", "default": false, "description": "Show AI actions (Explain / Tests / Docs) above functions and classes." },
+          "aide.errorIntel.enabled": { "type": "boolean", "default": true, "description": "Offer Explain/Fix with AI for problems, failed tasks and failed terminal commands." }
+        }
+      },
+      {
+        "title": "AI Permissions",
+        "order": 5,
+        "properties": {
+          "aide.permissions.read": { "type": "string", "enum": ["ask", "allow", "deny"], "default": "allow", "description": "Agents reading files, searching, listing, diagnostics." },
+          "aide.permissions.write": { "type": "string", "enum": ["ask", "allow", "deny"], "default": "ask", "description": "Agents creating or editing files." },
+          "aide.permissions.delete": { "type": "string", "enum": ["ask", "allow", "deny"], "default": "ask" },
+          "aide.permissions.command": { "type": "string", "enum": ["ask", "allow", "deny"], "default": "ask", "description": "Agents running shell commands. Dangerous commands always ask." },
+          "aide.permissions.network": { "type": "string", "enum": ["ask", "allow", "deny"], "default": "ask" },
+          "aide.permissions.git": { "type": "string", "enum": ["ask", "allow", "deny"], "default": "ask", "description": "Commit, branch, push." },
+          "aide.permissions.github": { "type": "string", "enum": ["ask", "allow", "deny"], "default": "ask", "description": "Writes to GitHub (comments, pull requests)." },
+          "aide.permissions.external": { "type": "string", "enum": ["ask", "allow", "deny"], "default": "ask", "description": "Reading connected services (Drive...) into AI context." },
+          "aide.permissions.mcp": { "type": "string", "enum": ["ask", "allow", "deny"], "default": "ask", "description": "Calling MCP server tools." }
+        }
+      },
+      {
+        "title": "MCP, Connectors & Extensions",
+        "order": 6,
+        "properties": {
+          "aide.mcp.autoStart": { "type": "string", "enum": ["onDemand", "startup", "never"], "default": "onDemand", "description": "When to start configured MCP servers." },
+          "aide.connectors.googleDrive.clientId": { "type": "string", "default": "", "description": "OAuth client ID (Desktop app) for the Google Drive connector." },
+          "aide.extensions.folder": { "type": "string", "default": "", "description": "Where new AIDE extensions are created (default ~/aide-extensions)." }
+        }
+      },
+      {
+        "title": "Workflows, Automations & Layouts",
+        "order": 7,
+        "properties": {
+          "aide.workflows": { "type": "array", "default": [], "markdownDescription": "Workflows defined in settings (`{ name, description, steps: [...] }`). Files in `.aide/workflows/*.yaml` and `~/.aide/workflows/` are also loaded." },
+          "aide.automations": { "type": "array", "default": [], "markdownDescription": "Event-driven automations, e.g. `{ \"when\": \"buildFails\", \"then\": { \"agent\": \"debugger\", \"prompt\": \"Fix the build\" } }`. Triggers: `buildFails`, `commandFails`, `projectOpens`, `fileChanges` (with `glob`). Agents still ask for permission." },
+          "aide.layouts": { "type": "object", "default": {}, "description": "Saved workbench layouts (see AIDE: Save Current Layout)." },
+          "aide.welcome.show": { "type": "boolean", "default": true, "description": "Show the Get Started walkthrough on first launch." }
+        }
+      }
+    ]
+  }
+}
