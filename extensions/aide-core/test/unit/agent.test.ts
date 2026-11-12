@@ -151,7 +151,9 @@ describe('AgentRunner', () => {
 
 describe('tools', () => {
 	it('refuses paths outside the workspace', () => {
-		expect(() => resolveInRoot('C:\\ws', '..\\x')).toThrow(/outside/);
+		// Backslash paths only mean ".." on Windows; on Linux '..\x' is an ordinary file name.
+		if (process.platform === 'win32') expect(() => resolveInRoot('C:\\ws', '..\\x')).toThrow(/outside/);
+		expect(() => resolveInRoot(path.resolve('ws'), '../x')).toThrow(/outside/);
 		expect(() => resolveInRoot('/ws', '/etc/passwd')).toThrow(/outside/);
 		expect(resolveInRoot(path.resolve('ws'), 'a/b.txt')).toBe(path.resolve('ws', 'a/b.txt'));
 	});
