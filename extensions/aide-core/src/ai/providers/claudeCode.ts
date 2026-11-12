@@ -23,6 +23,17 @@ const MODES = new Set(['plan', 'acceptEdits', 'dontAsk', 'auto']);
 
 type Spawn = (cmd: string, args: string[], opts: SpawnOptions) => ChildProcess;
 
+/** Any of these makes Claude Code bill an API account instead of using the signed-in Claude subscription. */
+export const API_VARS = ['ANTHROPIC_API_KEY', 'ANTHROPIC_AUTH_TOKEN', 'ANTHROPIC_BASE_URL', 'CLAUDE_CODE_USE_BEDROCK',
+	'CLAUDE_CODE_USE_VERTEX', 'ANTHROPIC_BEDROCK_BASE_URL', 'ANTHROPIC_VERTEX_BASE_URL'];
+
+/** The environment for `claude`: without API-billing variables, unless the provider's options.allowApiKey is true. */
+export function subscriptionEnv(env: NodeJS.ProcessEnv, allowApiKey = false): NodeJS.ProcessEnv {
+	const out = { ...env };
+	if (!allowApiKey) for (const v of API_VARS) delete out[v];
+	return out;
+}
+
 export function describeTool(name: string, input: Record<string, unknown>): string {
 	const file = String(input.file_path ?? input.path ?? '').split(/[\\/]/).pop() ?? '';
 	switch (name) {
@@ -88,7 +99,7 @@ export class ClaudeCodeProvider implements Provider {
 		const cwd = String(this.config.options?.cwd ?? this.getCwd() ?? os.homedir());
 		let child: ChildProcess;
 		try {
-			child = this.spawn(exe, this.argv(req, session), { cwd, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true, shell: process.platform === 'win32' });
+			child = this.spawn(exe, this.argv(req, session), { cwd, env: subscriptionEnv(process.env, this.config.options?.allowApiKey === true), stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true, shell: process.platform === 'win32' });
 		} catch (err) {
 			throw new ProviderError(`Claude Code couldn't start: ${String(err)}`, this.config.id);
 		}

@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events';
 import { PassThrough } from 'stream';
 import { describe, expect, it } from 'vitest';
-import { ClaudeCodeProvider, describeTool, promptFor, sessionOf } from '../../src/ai/providers/claudeCode';
+import { ClaudeCodeProvider, describeTool, promptFor, sessionOf, subscriptionEnv } from '../../src/ai/providers/claudeCode';
 import type { ChatMessage, ChatRequest, StreamEvent } from '../../src/ai/types';
 
 const SID = '5f0c2c1e-0000-4000-8000-000000000001';
@@ -91,5 +91,19 @@ describe('ClaudeCodeProvider', () => {
 		expect(describeTool('Bash', { command: 'npm test\nmore', description: undefined as any })).toBe('Run: npm test');
 		expect(sessionOf([user('a')], 'c')).toBeUndefined();
 		expect(promptFor(req([user('a'), { role: 'assistant', content: 'b' }, user('c')]), false)).toBe('User: a\n\nAssistant: b\n\nUser: c');
+	});
+
+	it('never passes an API key to Claude Code, so the subscription is used, not credits', async () => {
+		process.env.ANTHROPIC_API_KEY = 'sk-ant-should-not-be-used';
+		try {
+			const { spawn, calls } = fakeSpawn(STREAM);
+			const p = new ClaudeCodeProvider({ id: 'claude', kind: 'claude-code' }, () => '/w', spawn as any);
+			await collect(p.chat(req([user('hi')]), new AbortController().signal));
+			expect(calls[0].opts.env.ANTHROPIC_API_KEY).toBeUndefined();
+			expect(subscriptionEnv({ ANTHROPIC_API_KEY: 'k', PATH: 'p' } as any)).toEqual({ PATH: 'p' });
+			expect(subscriptionEnv({ ANTHROPIC_API_KEY: 'k' } as any, true)).toEqual({ ANTHROPIC_API_KEY: 'k' });
+		} finally {
+			delete process.env.ANTHROPIC_API_KEY;
+		}
 	});
 });
