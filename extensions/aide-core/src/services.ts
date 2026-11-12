@@ -1,3 +1,4 @@
+import { ClaudeCodeProvider } from './ai/providers/claudeCode';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
@@ -161,6 +162,8 @@ export class Services implements vscode.Disposable {
 		this.project = root ? new ProjectContext(root) : undefined;
 
 		this.providers = new ProviderRegistry(id => this.getApiKey(id));
+		// Claude Code works in the open folder, like the person would in a terminal there.
+		this.providers.registerKind('claude-code', c => new ClaudeCodeProvider(c, () => this.root));
 		this.providers.setConfigs(config.providersConfig());
 		this.router = new Router(config.routingConfig(), {
 			providerExists: id => !!this.providers.getConfig(id),

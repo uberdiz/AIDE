@@ -99,7 +99,7 @@ export interface ModelInfo {
 
 export type ModelCapability = 'chat' | 'tools' | 'vision' | 'embeddings' | 'reasoning' | 'completion';
 
-export type ProviderKind = 'anthropic' | 'openai' | 'openai-compatible' | 'ollama' | 'gemini';
+export type ProviderKind = 'anthropic' | 'openai' | 'openai-compatible' | 'ollama' | 'gemini' | 'claude-code';
 
 export interface ProviderConfig {
 	id: string;

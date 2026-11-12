@@ -5,11 +5,12 @@ import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { target } from './platform.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const exe = path.join(root, 'runtime', 'AIDE.exe');
+const exe = path.join(root, 'runtime', target([]).exe);
 if (!fs.existsSync(exe)) {
-	console.error('runtime/AIDE.exe not found. Run "npm run setup" first.');
+	console.error(`${exe} not found. Run "npm run setup" first.`);
 	process.exit(1);
 }
 const dev = process.argv.includes('--dev');

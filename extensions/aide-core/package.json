@@ -268,14 +268,14 @@
           "aide.providers": {
             "type": "array",
             "order": 1,
-            "markdownDescription": "AI providers. Each entry: `id`, `kind` (`anthropic` | `openai` | `openai-compatible` | `ollama` | `gemini`), optional `label`, `baseUrl`, `local`, `enabled`, `models` (overrides such as prices/context), `options`. API keys are **not** stored here - use **AIDE: Open AI Settings**.",
-            "default": [{ "id": "ollama", "kind": "ollama", "label": "Ollama (local)", "local": true }],
+            "markdownDescription": "AI providers. Each entry: `id`, `kind` (`anthropic` | `openai` | `openai-compatible` | `ollama` | `gemini` | `claude-code`: your Claude subscription through the `claude` command, no API key), optional `label`, `baseUrl`, `local`, `enabled`, `models` (overrides such as prices/context), `options`. API keys are **not** stored here - use **AIDE: Open AI Settings**.",
+            "default": [{ "id": "claude", "kind": "claude-code", "label": "Claude Code (your Claude subscription)" }, { "id": "ollama", "kind": "ollama", "label": "Ollama (local)", "local": true }],
             "items": {
               "type": "object",
               "required": ["id", "kind"],
               "properties": {
                 "id": { "type": "string" },
-                "kind": { "type": "string", "enum": ["anthropic", "openai", "openai-compatible", "ollama", "gemini"] },
+                "kind": { "type": "string", "enum": ["anthropic", "openai", "openai-compatible", "ollama", "gemini", "claude-code"] },
                 "label": { "type": "string" },
                 "baseUrl": { "type": "string" },
                 "local": { "type": "boolean" },

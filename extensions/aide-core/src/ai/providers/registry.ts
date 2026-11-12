@@ -2,6 +2,7 @@ import { mergeModels, BUILTIN_MODELS } from '../catalog';
 import type { ModelInfo, Provider, ProviderConfig } from '../types';
 import { ProviderError } from '../types';
 import { AnthropicProvider } from './anthropic';
+import { ClaudeCodeProvider } from './claudeCode';
 import { GeminiProvider } from './gemini';
 import { OllamaProvider } from './ollama';
 import { OpenAICompatibleProvider } from './openai';
@@ -27,6 +28,7 @@ const builtinFactories: Record<string, ProviderFactory> = {
 	'openai-compatible': (c, k) => new OpenAICompatibleProvider(c, k),
 	ollama: c => new OllamaProvider(c),
 	gemini: (c, k) => new GeminiProvider(c, k),
+	'claude-code': c => new ClaudeCodeProvider(c),   // the Claude subscription, no API key
 };
 
 /**
